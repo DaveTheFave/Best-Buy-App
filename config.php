@@ -1,8 +1,8 @@
 <?php
 // Database configuration
 define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_USER', 'appuser');
+define('DB_PASS', 'appuser1');
 define('DB_NAME', 'bestbuy_tamagotchi');
 
 // Create database connection
