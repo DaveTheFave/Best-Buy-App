@@ -22,7 +22,7 @@ if ($method === 'POST') {
     
     // Record the sale with its special features
     $saleStmt = $conn->prepare("INSERT INTO sales (user_id, session_date, revenue, has_credit_card, has_paid_membership, has_warranty) VALUES (?, ?, ?, ?, ?, ?)");
-    $saleStmt->bind_param("isdiiii", $userId, $sessionDate, $revenue, $hasCreditCard, $hasPaidMembership, $hasWarranty);
+    $saleStmt->bind_param("isdiii", $userId, $sessionDate, $revenue, $hasCreditCard, $hasPaidMembership, $hasWarranty);
     $saleStmt->execute();
     $saleStmt->close();
     
