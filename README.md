@@ -80,16 +80,23 @@ A gamified performance tracking system for Best Buy employees. Keep your virtual
 
 1. **Login**: Enter your username (no password required)
 2. **Set Work Hours**: Input how many hours you're working today
-3. **View Goals**: See your revenue target based on work hours (default: $100/hour)
+3. **View Goals**: See your revenue target based on work hours (default: $1000/hour)
 4. **Feed Your Animal**: Enter revenue amounts to feed your pet and increase health/happiness
-5. **Track Progress**: Monitor your stats and goal achievement in real-time
+5. **Special Bonuses**: 
+   - Check "Credit Card + Paid Membership" for extra bonuses (+15 health, +20 happiness)
+   - Check "Warranty Attached" for extra bonuses (+10 health, +10 happiness)
+6. **Track Progress**: Monitor your stats and goal achievement in real-time
 
 ## Game Mechanics
 
 - **Health**: Decreases over time if not fed (5 points per hour)
 - **Happiness**: Increases when you feed your animal
 - **Feeding**: Enter revenue to feed ($50 = 10 health points, up to 20 per feeding)
-- **Goals**: Daily revenue targets based on work hours
+- **Goals**: Daily revenue targets based on work hours ($1000/hour)
+- **Special Bonuses**:
+  - **Credit Card + Paid Membership**: +15 health, +20 happiness
+  - **Warranty Attached**: +10 health, +10 happiness
+  - Bonuses stack if you have both!
 - **Auto-update**: Stats refresh automatically every 30 seconds
 
 ## Responsive Design
