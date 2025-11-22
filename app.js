@@ -222,6 +222,9 @@ document.getElementById('feedForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const revenue = parseFloat(document.getElementById('revenue').value);
+    const hasCreditCard = document.getElementById('hasCreditCard').checked;
+    const hasPaidMembership = document.getElementById('hasPaidMembership').checked;
+    const hasWarranty = document.getElementById('hasWarranty').checked;
     
     if (revenue <= 0) {
         showError('feedError', 'Please enter a valid revenue amount');
@@ -236,7 +239,10 @@ document.getElementById('feedForm').addEventListener('submit', async (e) => {
             },
             body: JSON.stringify({
                 user_id: currentUser.id,
-                revenue: revenue
+                revenue: revenue,
+                has_credit_card: hasCreditCard,
+                has_paid_membership: hasPaidMembership,
+                has_warranty: hasWarranty
             })
         });
         
@@ -254,6 +260,9 @@ document.getElementById('feedForm').addEventListener('submit', async (e) => {
             
             // Clear form and show success
             document.getElementById('revenue').value = '';
+            document.getElementById('hasCreditCard').checked = false;
+            document.getElementById('hasPaidMembership').checked = false;
+            document.getElementById('hasWarranty').checked = false;
             showSuccess('feedMessage', data.message + ' +' + formatCurrency(revenue));
             
             // Add animation effect
