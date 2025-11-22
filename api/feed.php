@@ -13,9 +13,18 @@ if ($method === 'POST') {
     
     $userId = $data['user_id'];
     $revenue = $data['revenue'];
+    $hasCreditCard = isset($data['has_credit_card']) ? $data['has_credit_card'] : false;
+    $hasPaidMembership = isset($data['has_paid_membership']) ? $data['has_paid_membership'] : false;
+    $hasWarranty = isset($data['has_warranty']) ? $data['has_warranty'] : false;
     $sessionDate = date('Y-m-d');
     
     $conn = getDBConnection();
+    
+    // Record the sale with its special features
+    $saleStmt = $conn->prepare("INSERT INTO sales (user_id, session_date, revenue, has_credit_card, has_paid_membership, has_warranty) VALUES (?, ?, ?, ?, ?, ?)");
+    $saleStmt->bind_param("isdiiii", $userId, $sessionDate, $revenue, $hasCreditCard, $hasPaidMembership, $hasWarranty);
+    $saleStmt->execute();
+    $saleStmt->close();
     
     // Update revenue in today's work session
     $sessionStmt = $conn->prepare("UPDATE work_sessions SET revenue = revenue + ? WHERE user_id = ? AND session_date = ?");
@@ -40,8 +49,30 @@ if ($method === 'POST') {
         $updateGoalStmt->close();
     }
     
-    // Calculate health increase based on revenue (e.g., $50 = 10 health, max 100)
+    // Calculate health increase based on revenue (e.g., $50 = 10 health, max 20 base)
     $healthIncrease = min(20, floor($revenue / 50) * 10);
+    $happinessIncrease = $healthIncrease;
+    
+    // Apply special bonuses
+    $bonusMessage = '';
+    
+    // Bonus for Credit Card + Paid Membership combo
+    if ($hasCreditCard && $hasPaidMembership) {
+        $healthIncrease += 15;
+        $happinessIncrease += 20;
+        $bonusMessage = '🎉 AMAZING! Credit Card + Paid Membership combo! +15 Health, +20 Happiness!';
+    }
+    
+    // Bonus for Warranty
+    if ($hasWarranty) {
+        $healthIncrease += 10;
+        $happinessIncrease += 10;
+        if ($bonusMessage) {
+            $bonusMessage .= ' 🛡️ Plus Warranty bonus! +10 Health, +10 Happiness!';
+        } else {
+            $bonusMessage = '🛡️ Great job with the Warranty! +10 Health, +10 Happiness!';
+        }
+    }
     
     // Update animal stats
     $animalStmt = $conn->prepare("UPDATE animal_stats 
@@ -50,7 +81,6 @@ if ($method === 'POST') {
                                        last_fed = NOW(),
                                        total_revenue = total_revenue + ?
                                    WHERE user_id = ?");
-    $happinessIncrease = $healthIncrease;
     $animalStmt->bind_param("iidi", $healthIncrease, $happinessIncrease, $revenue, $userId);
     
     if ($animalStmt->execute()) {
@@ -61,13 +91,18 @@ if ($method === 'POST') {
         $statsResult = $statsStmt->get_result();
         $stats = $statsResult->fetch_assoc();
         
+        $message = 'Animal fed successfully!';
+        if ($bonusMessage) {
+            $message .= ' ' . $bonusMessage;
+        }
+        
         echo json_encode([
             'success' => true,
             'health' => $stats['health'],
             'happiness' => $stats['happiness'],
             'total_revenue' => $stats['total_revenue'],
             'goal_met' => $goalMet,
-            'message' => 'Animal fed successfully!'
+            'message' => $message
         ]);
         
         $statsStmt->close();

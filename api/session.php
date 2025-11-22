@@ -15,8 +15,8 @@ if ($method === 'POST') {
     $workHours = $data['work_hours'];
     $sessionDate = date('Y-m-d');
     
-    // Calculate goal based on work hours (example: $100 per hour)
-    $goalAmount = $workHours * 100;
+    // Calculate goal based on work hours ($1000 per hour)
+    $goalAmount = $workHours * 1000;
     
     $conn = getDBConnection();
     

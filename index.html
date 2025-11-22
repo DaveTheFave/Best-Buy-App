@@ -119,6 +119,25 @@
                         <label for="revenue">Revenue Amount ($)</label>
                         <input type="number" id="revenue" name="revenue" min="0.01" step="0.01" required placeholder="e.g., 150.00">
                     </div>
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="hasCreditCard" name="hasCreditCard">
+                            <span>💳 Credit Card</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="hasPaidMembership" name="hasPaidMembership">
+                            <span>⭐ Paid Membership</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="hasWarranty" name="hasWarranty">
+                            <span>🛡️ Warranty Attached</span>
+                        </label>
+                    </div>
+                    <div class="bonus-info">
+                        <p><strong>💡 Bonus Tips:</strong></p>
+                        <p>✨ Credit Card + Paid Membership = +35 bonus points!</p>
+                        <p>🛡️ Warranty = +20 bonus points!</p>
+                    </div>
                     <button type="submit" class="btn btn-success">Feed Animal</button>
                 </form>
                 <div id="feedMessage" class="success-message"></div>

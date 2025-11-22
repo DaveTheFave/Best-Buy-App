@@ -36,6 +36,19 @@ CREATE TABLE IF NOT EXISTS work_sessions (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Sales tracking table for special bonuses
+CREATE TABLE IF NOT EXISTS sales (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    session_date DATE NOT NULL,
+    revenue DECIMAL(10, 2) NOT NULL,
+    has_credit_card BOOLEAN DEFAULT FALSE,
+    has_paid_membership BOOLEAN DEFAULT FALSE,
+    has_warranty BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Sample data (you can insert actual employee data here)
 INSERT INTO users (username, name, animal_choice) VALUES 
 ('employee1', 'John Doe', 'cat'),
