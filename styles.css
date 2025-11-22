@@ -1,0 +1,446 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* Screen Management */
+.screen {
+    display: none;
+}
+
+.screen.active {
+    display: block;
+}
+
+/* Container */
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Cards */
+.card {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+/* Best Buy Logo */
+.best-buy-logo {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.best-buy-logo h1 {
+    color: #0046be;
+    font-size: 2.5em;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.best-buy-logo .subtitle {
+    color: #666;
+    font-size: 1.1em;
+}
+
+/* Forms */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 500;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #0046be;
+}
+
+/* Buttons */
+.btn {
+    width: 100%;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: #0046be;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #003d99;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 70, 190, 0.3);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+    width: auto;
+    padding: 10px 20px;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+}
+
+/* Messages */
+.error-message {
+    color: #dc3545;
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 5px;
+    background: #f8d7da;
+    display: none;
+}
+
+.error-message.show {
+    display: block;
+}
+
+.success-message {
+    color: #155724;
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 5px;
+    background: #d4edda;
+    display: none;
+}
+
+.success-message.show {
+    display: block;
+}
+
+/* Game Header */
+.game-header {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+}
+
+.user-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.user-info h2 {
+    color: #333;
+    font-size: 1.5em;
+}
+
+/* Animal Container */
+.animal-container {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+}
+
+.animal-display {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.animal-sprite {
+    display: inline-block;
+    width: 200px;
+    height: 200px;
+    background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+.animal-emoji {
+    font-size: 100px;
+    animation: wiggle 2s ease-in-out infinite;
+}
+
+@keyframes wiggle {
+    0%, 100% {
+        transform: rotate(-5deg);
+    }
+    50% {
+        transform: rotate(5deg);
+    }
+}
+
+.animal-name {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Stats Container */
+.stats-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.stat-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.stat-bar label {
+    font-weight: 600;
+    color: #333;
+    font-size: 1.1em;
+}
+
+.bar-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.bar {
+    flex: 1;
+    height: 30px;
+    background: #e0e0e0;
+    border-radius: 15px;
+    position: relative;
+    overflow: hidden;
+}
+
+.health-bar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: var(--health, 100%);
+    background: linear-gradient(90deg, #ff6b6b, #ee5a6f);
+    border-radius: 15px;
+    transition: width 0.5s ease;
+}
+
+.happiness-bar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: var(--happiness, 100%);
+    background: linear-gradient(90deg, #ffd93d, #ffb400);
+    border-radius: 15px;
+    transition: width 0.5s ease;
+}
+
+.stat-value {
+    font-weight: bold;
+    color: #333;
+    min-width: 40px;
+    text-align: right;
+}
+
+/* Goals Container */
+.goals-container h3,
+.feed-container h3 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 1.3em;
+}
+
+.goal-info {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.goal-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.goal-label {
+    font-weight: 600;
+    color: #666;
+}
+
+.goal-value {
+    font-weight: bold;
+    color: #333;
+}
+
+.goal-status {
+    margin-top: 10px;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.goal-status.not-met {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.goal-status.met {
+    background: #d4edda;
+    color: #155724;
+}
+
+/* Feed Container */
+.feed-container p {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .card {
+        padding: 20px;
+    }
+
+    .best-buy-logo h1 {
+        font-size: 2em;
+    }
+
+    .animal-sprite {
+        width: 150px;
+        height: 150px;
+    }
+
+    .animal-emoji {
+        font-size: 75px;
+    }
+
+    .user-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .user-info h2 {
+        font-size: 1.2em;
+    }
+
+    .btn-secondary {
+        width: 100%;
+    }
+
+    .goal-item {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .goal-label,
+    .goal-value {
+        text-align: left;
+    }
+}
+
+@media (max-width: 480px) {
+    .best-buy-logo h1 {
+        font-size: 1.8em;
+    }
+
+    .best-buy-logo .subtitle {
+        font-size: 1em;
+    }
+
+    .animal-sprite {
+        width: 120px;
+        height: 120px;
+    }
+
+    .animal-emoji {
+        font-size: 60px;
+    }
+
+    .animal-name {
+        font-size: 1.2em;
+    }
+
+    .goals-container h3,
+    .feed-container h3 {
+        font-size: 1.1em;
+    }
+}
+
+/* Landscape mobile optimization */
+@media (max-width: 768px) and (orientation: landscape) {
+    .animal-sprite {
+        width: 100px;
+        height: 100px;
+    }
+
+    .animal-emoji {
+        font-size: 50px;
+    }
+
+    .game-header,
+    .animal-container,
+    .card {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+}

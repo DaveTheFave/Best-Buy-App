@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Best Buy Tamagotchi</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="screen active">
+        <div class="container">
+            <div class="card">
+                <div class="best-buy-logo">
+                    <h1>Best Buy</h1>
+                    <p class="subtitle">Employee Tamagotchi</p>
+                </div>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" required placeholder="Enter your username">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </form>
+                <div id="loginError" class="error-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Work Hours Screen -->
+    <div id="workHoursScreen" class="screen">
+        <div class="container">
+            <div class="card">
+                <h2>Welcome, <span id="employeeName"></span>!</h2>
+                <p>How many hours are you working today?</p>
+                <form id="workHoursForm">
+                    <div class="form-group">
+                        <label for="workHours">Work Hours</label>
+                        <input type="number" id="workHours" name="workHours" min="0.5" max="12" step="0.5" required placeholder="e.g., 8">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Start Shift</button>
+                </form>
+                <div id="workHoursError" class="error-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Game Screen -->
+    <div id="gameScreen" class="screen">
+        <div class="container">
+            <!-- Header -->
+            <div class="game-header">
+                <div class="user-info">
+                    <h2>Welcome, <span id="gameEmployeeName"></span>!</h2>
+                    <button id="logoutBtn" class="btn btn-secondary">Logout</button>
+                </div>
+            </div>
+
+            <!-- Animal Display -->
+            <div class="animal-container">
+                <div class="animal-display">
+                    <div id="animalSprite" class="animal-sprite">
+                        <div class="animal-emoji">🐱</div>
+                    </div>
+                    <div class="animal-name"><span id="animalType">Cat</span></div>
+                </div>
+                
+                <!-- Stats Bars -->
+                <div class="stats-container">
+                    <div class="stat-bar">
+                        <label>❤️ Health</label>
+                        <div class="bar-container">
+                            <div class="bar health-bar" id="healthBar"></div>
+                            <span class="stat-value" id="healthValue">100</span>
+                        </div>
+                    </div>
+                    <div class="stat-bar">
+                        <label>😊 Happiness</label>
+                        <div class="bar-container">
+                            <div class="bar happiness-bar" id="happinessBar"></div>
+                            <span class="stat-value" id="happinessValue">100</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Goals Display -->
+            <div class="goals-container card">
+                <h3>📊 Today's Performance Goals</h3>
+                <div class="goal-info">
+                    <div class="goal-item">
+                        <span class="goal-label">Work Hours:</span>
+                        <span class="goal-value" id="goalWorkHours">-</span>
+                    </div>
+                    <div class="goal-item">
+                        <span class="goal-label">Revenue Goal:</span>
+                        <span class="goal-value" id="goalAmount">$0</span>
+                    </div>
+                    <div class="goal-item">
+                        <span class="goal-label">Current Revenue:</span>
+                        <span class="goal-value" id="currentRevenue">$0</span>
+                    </div>
+                    <div class="goal-item">
+                        <span class="goal-label">Total Revenue:</span>
+                        <span class="goal-value" id="totalRevenue">$0</span>
+                    </div>
+                    <div class="goal-status" id="goalStatus">
+                        <span class="status-text">Goal not yet achieved</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feed Form -->
+            <div class="feed-container card">
+                <h3>🍕 Feed Your Animal</h3>
+                <p>Enter revenue to feed your animal and reach your goals!</p>
+                <form id="feedForm">
+                    <div class="form-group">
+                        <label for="revenue">Revenue Amount ($)</label>
+                        <input type="number" id="revenue" name="revenue" min="0.01" step="0.01" required placeholder="e.g., 150.00">
+                    </div>
+                    <button type="submit" class="btn btn-success">Feed Animal</button>
+                </form>
+                <div id="feedMessage" class="success-message"></div>
+                <div id="feedError" class="error-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
