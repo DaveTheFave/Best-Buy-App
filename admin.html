@@ -481,10 +481,6 @@
     </style>
 </head>
 <body>
-    <!-- Include notification and session utilities -->
-    <script src="js/notifications.js"></script>
-    <script src="js/cookies.js"></script>
-
     <!-- Admin Login Screen -->
     <div id="adminLoginScreen">
         <div class="login-card">
@@ -596,12 +592,11 @@
     <!-- Import utility scripts -->
     <script src="utils/cookies.js"></script>
     <script src="utils/session.js"></script>
-    <script src="utils/notifications.js"></script>
+    <script src="js/notifications.js"></script>
 
     <script>
         let adminUser = null;
         let adminSession = null;
-        let notificationManager = null;
         const API_BASE = 'api/';
         
         // Configuration constants
