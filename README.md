@@ -10,6 +10,8 @@ A gamified performance tracking system for Best Buy employees. Keep your virtual
 - 📱 **Responsive design** - Works great on both mobile and desktop
 - 📈 **Health & Happiness stats** - Watch your animal's wellbeing based on your performance
 - 🎯 **Goal tracking** - Monitor progress toward daily targets
+- 🔄 **Daily health reset** - Health decay timer resets each day for a fresh start
+- 👨‍💼 **Admin dashboard** - Monitor all employee pets' health (admin access only)
 
 ## Technology Stack
 
@@ -93,9 +95,23 @@ A gamified performance tracking system for Best Buy employees. Keep your virtual
 6. **Change Pet**: Click "Change Pet" button to select a different animal anytime
 7. **Track Progress**: Monitor your stats and goal achievement in real-time
 
+### Admin Dashboard
+
+Administrators can access the admin dashboard at `/admin.html` to:
+- View all employee pets and their health status
+- Monitor team performance metrics
+- Track active work sessions
+
+**To create admin users:**
+```sql
+UPDATE users SET is_admin = TRUE WHERE username = 'your_admin_username';
+```
+
 ## Game Mechanics
 
-- **Health**: Decreases over time if not fed (5 points per hour)
+- **Health**: Decreases over time if not fed (5 points per hour during work sessions)
+- **Daily Reset**: Health decay timer resets at the start of each new day - pets get a fresh start!
+- **Work Sessions**: Health only decays during active work sessions, not on days off
 - **Happiness**: Increases when you feed your animal and meet goals
 - **Primary Goals**: 
   - 1 Paid Membership per 4 hours worked
@@ -139,6 +155,7 @@ The app is fully responsive and optimized for:
 - `GET/POST /api/session.php` - Work session management
 - `GET/POST /api/feed.php` - Feed animal and update stats
 - `POST /api/change_pet.php` - Change user's pet selection
+- `GET /api/admin.php` - Admin dashboard data (requires admin privileges)
 
 ## Database Schema
 
@@ -152,10 +169,13 @@ The app is fully responsive and optimized for:
 If you're updating from a previous version, run the migration script:
 
 ```bash
-mysql -u root -p bestbuy_tamagotchi < migration.sql
+mysql -u root -p bestbuy_tamagotchi < migration_daily_reset.sql
 ```
 
-This will add the new goal tracking columns to your database.
+This will add:
+- The `last_health_reset` column for daily health reset tracking
+- The `is_admin` column for admin authentication
+- A default admin user (username: 'admin')
 
 ## Security Notes
 

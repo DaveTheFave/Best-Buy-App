@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(50) UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
     animal_choice VARCHAR(50) DEFAULT 'cat',
+    is_admin BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -20,6 +21,7 @@ CREATE TABLE IF NOT EXISTS animal_stats (
     happiness INT DEFAULT 100,
     last_fed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     total_revenue DECIMAL(10, 2) DEFAULT 0.00,
+    last_health_reset DATE DEFAULT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -54,10 +56,11 @@ CREATE TABLE IF NOT EXISTS sales (
 );
 
 -- Sample data (you can insert actual employee data here)
-INSERT INTO users (username, name, animal_choice) VALUES 
-('employee1', 'John Doe', 'cat'),
-('employee2', 'Jane Smith', 'dog'),
-('employee3', 'Bob Johnson', 'bird')
+INSERT INTO users (username, name, animal_choice, is_admin) VALUES 
+('employee1', 'John Doe', 'cat', FALSE),
+('employee2', 'Jane Smith', 'dog', FALSE),
+('employee3', 'Bob Johnson', 'bird', FALSE),
+('admin', 'Admin User', 'cat', TRUE)
 ON DUPLICATE KEY UPDATE username=username;
 
 -- Initialize animal stats for sample users
