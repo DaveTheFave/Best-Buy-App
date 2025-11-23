@@ -324,9 +324,232 @@
         #adminDashboard.active {
             display: block;
         }
+
+        /* Shift Time Input Styles */
+        .shift-time-group {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .shift-time-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .shift-time-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .shift-time-inputs input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 0.9em;
+            box-sizing: border-box;
+        }
+
+        .shift-time-inputs input:focus {
+            outline: none;
+            border-color: #0046be;
+        }
+
+        .session-controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-reset {
+            padding: 8px 16px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .btn-reset:hover {
+            background: #c82333;
+        }
+
+        .session-info {
+            margin-top: 10px;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        /* Apps & Memberships Section */
+        .apps-memberships-section {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .apps-memberships-section h2 {
+            margin: 0 0 20px 0;
+            color: #0046be;
+        }
+
+        .apps-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 20px 0;
+        }
+
+        .app-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .app-item-info {
+            flex: 1;
+        }
+
+        .app-item-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .app-item-type {
+            font-size: 0.85em;
+            color: #666;
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .app-item-notes {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .remove-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+
+        .remove-btn:hover {
+            background: #c82333;
+        }
+
+        .add-app-form {
+            display: grid;
+            gap: 15px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .add-app-form input, .add-app-form select {
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .add-app-form input:focus, .add-app-form select:focus {
+            outline: none;
+            border-color: #0046be;
+        }
+
+        .add-app-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .add-app-btn:hover {
+            background: #218838;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+        }
+
+        /* Reset Session Button */
+        .reset-session-btn {
+            background: #dc3545;
+            color: white;
+            border: 1px solid #c82333;
+            padding: 8px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+
+        .reset-session-btn:hover {
+            background: #c82333;
+        }
+
+        /* Notification Permission Banner */
+        .notification-permission-banner {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notification-permission-banner button {
+            background: white;
+            color: #17a2b8;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .notification-permission-banner button:hover {
+            background: #f8f9fa;
+        }
+
+        .notification-permission-banner.hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
+    <!-- Include notification and session utilities -->
+    <script src="js/notifications.js"></script>
+    <script src="js/cookies.js"></script>
+
     <!-- Admin Login Screen -->
     <div id="adminLoginScreen">
         <div class="login-card">
@@ -336,6 +559,22 @@
                 <div class="form-group">
                     <label for="adminUsername">Username</label>
                     <input type="text" id="adminUsername" name="username" required placeholder="Enter admin username">
+                </div>
+                <div class="shift-time-group">
+                    <label>Shift Hours (Optional)</label>
+                    <div class="shift-time-inputs">
+                        <div>
+                            <label for="shiftStart" style="font-size: 0.85em; font-weight: normal;">Start Time</label>
+                            <input type="datetime-local" id="shiftStart" name="shiftStart">
+                        </div>
+                        <div>
+                            <label for="shiftEnd" style="font-size: 0.85em; font-weight: normal;">End Time</label>
+                            <input type="datetime-local" id="shiftEnd" name="shiftEnd">
+                        </div>
+                    </div>
+                    <div class="session-info">
+                        Leave blank to use default shift (now until 21:00 today)
+                    </div>
                 </div>
                 <button type="submit" class="btn-login">Login</button>
                 <div id="loginError" class="login-error"></div>
@@ -350,8 +589,43 @@
                 <h1>🎮 Admin Dashboard</h1>
                 <p>Monitor all employee pets and their health status</p>
                 <div class="header-controls">
-                    <div class="admin-info">Logged in as: <strong id="adminName"></strong></div>
-                    <button class="logout-btn" onclick="logout()">Logout</button>
+                    <div class="admin-info">
+                        Logged in as: <strong id="adminName"></strong>
+                        <div class="session-info" id="sessionInfo" style="margin-top: 5px;"></div>
+                    </div>
+                    <div class="session-controls">
+                        <button class="btn-reset" onclick="resetSession()">Reset Session</button>
+                        <button class="logout-btn" onclick="logout()">Logout</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notification Permission Banner -->
+            <div id="notificationBanner" class="notification-permission-banner hidden">
+                <div>
+                    <strong>🔔 Enable Pet Feeding Reminders</strong>
+                    <p style="margin: 5px 0 0 0; font-size: 0.9em;">Get hourly notifications to feed your pet on time!</p>
+                </div>
+                <button onclick="enableNotifications()">Enable Notifications</button>
+            </div>
+
+            <!-- Apps & Memberships Section -->
+            <div class="apps-memberships-section">
+                <h2>📱 Apps & Memberships</h2>
+                <div id="appsListContainer">
+                    <ul id="appsList" class="apps-list"></ul>
+                </div>
+                <div class="add-app-form">
+                    <h3 style="margin: 0 0 10px 0;">Add New App/Membership</h3>
+                    <input type="text" id="appName" placeholder="Name (e.g., Spotify Premium)" required>
+                    <select id="appType">
+                        <option value="app">App</option>
+                        <option value="membership">Membership</option>
+                        <option value="service">Service</option>
+                        <option value="subscription">Subscription</option>
+                    </select>
+                    <input type="text" id="appNotes" placeholder="Optional notes">
+                    <button class="add-app-btn" onclick="addAppMembership()">➕ Add</button>
                 </div>
             </div>
 
@@ -387,9 +661,51 @@
         </div>
     </div>
 
+    <!-- Import utility scripts -->
+    <script src="utils/cookies.js"></script>
+    <script src="utils/session.js"></script>
+    <script src="utils/notifications.js"></script>
+
     <script>
         let adminUser = null;
+        let adminSession = null;
+        let notificationManager = null;
         const API_BASE = 'api/';
+        const APPS_STORAGE_KEY = 'admin_apps_memberships';
+        
+        // Configuration constants
+        // Note: DEFAULT_SHIFT_END_HOUR should match NotificationManager.DEFAULT_END_HOUR
+        // We declare it here to avoid tight coupling with the NotificationManager module
+        const DEFAULT_SHIFT_END_HOUR = 21; // Must match NotificationManager.DEFAULT_END_HOUR
+
+        // Initialize apps & memberships from storage
+        let appsMemberships = [];
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            // Try to restore session
+            const savedSession = SessionStorage.loadSession();
+            if (savedSession && savedSession.adminUser) {
+                // Check if session is still valid
+                const now = new Date();
+                const sessionEnd = new Date(savedSession.shiftEnd);
+                
+                if (now < sessionEnd) {
+                    // Restore session
+                    adminUser = savedSession.adminUser;
+                    adminSession = savedSession;
+                    document.getElementById('adminName').textContent = adminUser.name;
+                    document.getElementById('adminLoginScreen').classList.add('hidden');
+                    document.getElementById('adminDashboard').classList.add('active');
+                    updateSessionInfo();
+                    loadPetData();
+                    startNotifications();
+                } else {
+                    // Session expired
+                    SessionStorage.clearSession();
+                }
+            }
+        });
 
         // Admin Login Handler
         document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
@@ -400,6 +716,31 @@
             if (!username) {
                 showLoginError('Please enter a username');
                 return;
+            }
+            
+            // Get shift times
+            let shiftStart = document.getElementById('shiftStart').value;
+            let shiftEnd = document.getElementById('shiftEnd').value;
+            
+            // Set defaults if not provided
+            const now = new Date();
+            if (!shiftStart) {
+                shiftStart = now.toISOString();
+            } else {
+                shiftStart = new Date(shiftStart).toISOString();
+            }
+            
+            if (!shiftEnd) {
+                // Default: end at configured hour today
+                const endTime = new Date();
+                endTime.setHours(DEFAULT_SHIFT_END_HOUR, 0, 0, 0);
+                // If end hour has passed, use tomorrow
+                if (now >= endTime) {
+                    endTime.setDate(endTime.getDate() + 1);
+                }
+                shiftEnd = endTime.toISOString();
+            } else {
+                shiftEnd = new Date(shiftEnd).toISOString();
             }
             
             try {
@@ -416,10 +757,22 @@
                 if (data.success) {
                     if (data.user.is_admin) {
                         adminUser = data.user;
+                        adminSession = {
+                            adminUser: adminUser,
+                            shiftStart: shiftStart,
+                            shiftEnd: shiftEnd,
+                            loginTime: now.toISOString()
+                        };
+                        
+                        // Save session
+                        SessionStorage.saveSession(adminSession);
+                        
                         document.getElementById('adminName').textContent = adminUser.name;
                         document.getElementById('adminLoginScreen').classList.add('hidden');
                         document.getElementById('adminDashboard').classList.add('active');
+                        updateSessionInfo();
                         loadPetData();
+                        startNotifications();
                     } else {
                         showLoginError('Access denied. Admin privileges required.');
                     }
@@ -432,6 +785,76 @@
             }
         });
 
+        function startNotifications() {
+            // Stop existing notifications if any
+            if (notificationManager) {
+                notificationManager.stop();
+            }
+
+            // Check if we're within session and allowed hours
+            const now = new Date();
+            const sessionEnd = new Date(adminSession.shiftEnd);
+            
+            if (now >= sessionEnd) {
+                console.log('Session already ended, not starting notifications');
+                return;
+            }
+
+            // Create notification manager
+            notificationManager = new NotificationManager({
+                title: '🐾 Pet Feeding Reminder',
+                message: 'Time to check on employee pets! Remember to remind employees to feed their pets.',
+                allowedHours: { startHour: 9, endHour: 21 },
+                useFallbackBanner: true,
+                onNotification: () => {
+                    console.log('Notification triggered at', new Date().toLocaleString());
+                    // Optionally refresh pet data when notification shows
+                    if (document.getElementById('adminDashboard').classList.contains('active')) {
+                        loadPetData();
+                    }
+                }
+            });
+
+            // Start with session information
+            notificationManager.start({
+                sessionStart: adminSession.shiftStart,
+                sessionEnd: adminSession.shiftEnd,
+                checkSessionActive: () => {
+                    const now = new Date();
+                    const end = new Date(adminSession.shiftEnd);
+                    return now < end;
+                }
+            });
+
+            console.log('Notifications started', notificationManager.getStatus());
+        }
+
+        function updateSessionInfo() {
+            if (adminSession) {
+                const start = new Date(adminSession.shiftStart);
+                const end = new Date(adminSession.shiftEnd);
+                const sessionInfo = document.getElementById('sessionInfo');
+                sessionInfo.textContent = `Shift: ${start.toLocaleTimeString()} - ${end.toLocaleTimeString()}`;
+            }
+        }
+
+        function resetSession() {
+            if (confirm('Are you sure you want to reset your session? This will stop all notifications.')) {
+                // Stop notifications
+                if (notificationManager) {
+                    notificationManager.stop();
+                    notificationManager = null;
+                }
+                
+                // Clear session
+                adminSession = null;
+                SessionStorage.clearSession();
+                
+                // Re-prompt for login
+                logout();
+            }
+        }
+
         function showLoginError(message) {
             const errorElement = document.getElementById('loginError');
             errorElement.textContent = message;
@@ -442,7 +865,17 @@
         }
 
         function logout() {
+            // Stop notifications
+            if (notificationManager) {
+                notificationManager.stop();
+                notificationManager = null;
+            }
+            
+            // Clear session
             adminUser = null;
+            adminSession = null;
+            SessionStorage.clearSession();
+            
             document.getElementById('adminLoginForm').reset();
             document.getElementById('adminLoginScreen').classList.remove('hidden');
             document.getElementById('adminDashboard').classList.remove('active');
@@ -546,6 +979,163 @@
                 loadPetData();
             }
         }, 30000);
+
+        // ============================================
+        // Notification Management Functions
+        // ============================================
+        
+        function initializeNotifications() {
+            // Check if notifications are already granted
+            if ('Notification' in window && Notification.permission === 'granted') {
+                notificationManager.permissionGranted = true;
+                notificationManager.startHourlyNotifications();
+                document.getElementById('notificationBanner').classList.add('hidden');
+            } else if ('Notification' in window && Notification.permission === 'default') {
+                // Show banner to request permission
+                document.getElementById('notificationBanner').classList.remove('hidden');
+            } else {
+                // Permission denied or not supported - will use fallback
+                document.getElementById('notificationBanner').classList.add('hidden');
+                notificationManager.startHourlyNotifications();
+            }
+        }
+
+        async function enableNotifications() {
+            const granted = await notificationManager.requestPermission(() => {
+                // Permission denied - hide banner and start with fallback
+                document.getElementById('notificationBanner').classList.add('hidden');
+            });
+            
+            if (granted) {
+                notificationManager.startHourlyNotifications();
+                document.getElementById('notificationBanner').classList.add('hidden');
+                alert('Notifications enabled! You\'ll receive hourly reminders to feed your pet.');
+            } else {
+                notificationManager.startHourlyNotifications(); // Will use fallback banner
+                alert('Notifications blocked. We\'ll show in-app reminders instead.');
+            }
+        }
+
+        // ============================================
+        // Apps & Memberships Management Functions
+        // ============================================
+        
+        function loadAppsMemberships() {
+            try {
+                // Try to load from localStorage first
+                const stored = localStorage.getItem(APPS_STORAGE_KEY);
+                if (stored) {
+                    appsMemberships = JSON.parse(stored);
+                } else {
+                    // Try to load from cookie as fallback
+                    const cookieData = getCookie(APPS_STORAGE_KEY);
+                    if (cookieData) {
+                        appsMemberships = JSON.parse(cookieData);
+                    } else {
+                        appsMemberships = [];
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to load apps & memberships:', e);
+                appsMemberships = [];
+            }
+            
+            renderAppsMemberships();
+        }
+
+        function saveAppsMemberships() {
+            const data = JSON.stringify(appsMemberships);
+            
+            // Save to localStorage
+            try {
+                localStorage.setItem(APPS_STORAGE_KEY, data);
+            } catch (e) {
+                console.warn('Failed to save to localStorage:', e);
+            }
+            
+            // Also save to cookie as backup
+            try {
+                setCookie(APPS_STORAGE_KEY, data, 7);
+            } catch (e) {
+                console.warn('Failed to save to cookie:', e);
+            }
+        }
+
+        function renderAppsMemberships() {
+            const listElement = document.getElementById('appsList');
+            
+            if (appsMemberships.length === 0) {
+                listElement.innerHTML = '<div class="empty-state">No apps or memberships added yet. Use the form below to add one!</div>';
+                return;
+            }
+            
+            let html = '';
+            appsMemberships.forEach((item, index) => {
+                html += `
+                    <li class="app-item">
+                        <div class="app-item-info">
+                            <div class="app-item-name">${escapeHtml(item.name)}</div>
+                            <span class="app-item-type">${escapeHtml(item.type)}</span>
+                            ${item.notes ? `<div class="app-item-notes">${escapeHtml(item.notes)}</div>` : ''}
+                        </div>
+                        <button class="remove-btn" data-index="${index}">Remove</button>
+                    </li>
+                `;
+            });
+            
+            listElement.innerHTML = html;
+            
+            // Add event delegation for remove buttons
+            listElement.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'), 10);
+                    removeAppMembership(index);
+                });
+            });
+        }
+
+        function addAppMembership() {
+            const name = document.getElementById('appName').value.trim();
+            const type = document.getElementById('appType').value;
+            const notes = document.getElementById('appNotes').value.trim();
+            
+            if (!name) {
+                alert('Please enter a name for the app/membership');
+                return;
+            }
+            
+            // Add to list
+            appsMemberships.push({
+                name: name,
+                type: type,
+                notes: notes,
+                addedAt: Date.now()
+            });
+            
+            // Save and re-render
+            saveAppsMemberships();
+            renderAppsMemberships();
+            
+            // Clear form
+            document.getElementById('appName').value = '';
+            document.getElementById('appType').value = 'app';
+            document.getElementById('appNotes').value = '';
+        }
+
+        function removeAppMembership(index) {
+            if (confirm('Are you sure you want to remove this app/membership?')) {
+                appsMemberships.splice(index, 1);
+                saveAppsMemberships();
+                renderAppsMemberships();
+            }
+        }
+
+        // Utility function to escape HTML and prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
     </script>
 </body>
 </html>
