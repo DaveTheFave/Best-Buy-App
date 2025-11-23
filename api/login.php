@@ -21,15 +21,17 @@ if ($method === 'POST') {
     $currentHour = (int)date('G'); // 0-23 hour format
     $today = date('Y-m-d');
     
-    // Create a marker table to track last reset if it doesn't exist
-    $conn->query("CREATE TABLE IF NOT EXISTS daily_reset_marker (
-        id INT PRIMARY KEY DEFAULT 1,
-        last_reset_date DATE NOT NULL,
-        last_reset_time DATETIME NOT NULL
-    )");
-    
     // Check when the last reset was performed
-    $markerResult = $conn->query("SELECT last_reset_date FROM daily_reset_marker WHERE id = 1");
+    // Note: The daily_reset_marker table should be created via migration_workday_reset.sql
+    $markerStmt = $conn->prepare("SELECT last_reset_date FROM daily_reset_marker WHERE id = ?");
+    $markerId = 1;
+    if ($markerStmt) {
+        $markerStmt->bind_param("i", $markerId);
+        $markerStmt->execute();
+        $markerResult = $markerStmt->get_result();
+    } else {
+        $markerResult = false;
+    }
     $shouldReset = false;
     
     if ($markerResult && $markerResult->num_rows > 0) {
@@ -47,23 +49,60 @@ if ($method === 'POST') {
         }
     }
     
+    // Close the marker statement
+    if ($markerStmt) {
+        $markerStmt->close();
+    }
+    
     // Perform the auto-reset if needed
     if ($shouldReset) {
         $conn->begin_transaction();
         try {
-            // Reset all employee stats
-            $conn->query("UPDATE animal_stats SET health = 100, happiness = 0, last_fed = NOW(), last_health_reset = '$today'");
+            // Reset all employee stats using prepared statement
+            $resetStatsStmt = $conn->prepare("UPDATE animal_stats SET health = 100, happiness = 0, last_fed = NOW(), last_health_reset = ?");
+            if (!$resetStatsStmt) {
+                throw new Exception('Failed to prepare reset stats statement: ' . $conn->error);
+            }
+            $resetStatsStmt->bind_param("s", $today);
+            if (!$resetStatsStmt->execute()) {
+                throw new Exception('Failed to execute reset stats: ' . $resetStatsStmt->error);
+            }
+            $resetStatsStmt->close();
             
-            // Delete today's work sessions
-            $conn->query("DELETE FROM work_sessions WHERE session_date = '$today'");
+            // Delete today's work sessions using prepared statement
+            $deleteSessionsStmt = $conn->prepare("DELETE FROM work_sessions WHERE session_date = ?");
+            if (!$deleteSessionsStmt) {
+                throw new Exception('Failed to prepare delete sessions statement: ' . $conn->error);
+            }
+            $deleteSessionsStmt->bind_param("s", $today);
+            if (!$deleteSessionsStmt->execute()) {
+                throw new Exception('Failed to execute delete sessions: ' . $deleteSessionsStmt->error);
+            }
+            $deleteSessionsStmt->close();
             
-            // Delete today's sales records
-            $conn->query("DELETE FROM sales WHERE session_date = '$today'");
+            // Delete today's sales records using prepared statement
+            $deleteSalesStmt = $conn->prepare("DELETE FROM sales WHERE session_date = ?");
+            if (!$deleteSalesStmt) {
+                throw new Exception('Failed to prepare delete sales statement: ' . $conn->error);
+            }
+            $deleteSalesStmt->bind_param("s", $today);
+            if (!$deleteSalesStmt->execute()) {
+                throw new Exception('Failed to execute delete sales: ' . $deleteSalesStmt->error);
+            }
+            $deleteSalesStmt->close();
             
-            // Update the reset marker
-            $conn->query("INSERT INTO daily_reset_marker (id, last_reset_date, last_reset_time) 
-                         VALUES (1, '$today', NOW()) 
-                         ON DUPLICATE KEY UPDATE last_reset_date = '$today', last_reset_time = NOW()");
+            // Update the reset marker using prepared statement
+            $updateMarkerStmt = $conn->prepare("INSERT INTO daily_reset_marker (id, last_reset_date, last_reset_time) 
+                         VALUES (1, ?, NOW()) 
+                         ON DUPLICATE KEY UPDATE last_reset_date = ?, last_reset_time = NOW()");
+            if (!$updateMarkerStmt) {
+                throw new Exception('Failed to prepare update marker statement: ' . $conn->error);
+            }
+            $updateMarkerStmt->bind_param("ss", $today, $today);
+            if (!$updateMarkerStmt->execute()) {
+                throw new Exception('Failed to execute update marker: ' . $updateMarkerStmt->error);
+            }
+            $updateMarkerStmt->close();
             
             $conn->commit();
         } catch (Exception $e) {

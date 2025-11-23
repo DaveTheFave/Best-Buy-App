@@ -1118,7 +1118,17 @@
         // ============================================
         
         async function resetWorkday() {
-            if (!confirm('Are you sure you want to reset the workday for ALL employees?\n\nThis will:\n- Reset all health to 100%\n- Reset all happiness to 0%\n- Clear all today\'s sales data\n- Delete all today\'s work sessions\n\nThis action cannot be undone!')) {
+            const confirmMessage = `Are you sure you want to reset the workday for ALL employees?
+
+This will:
+- Reset all health to 100%
+- Reset all happiness to 0%
+- Clear all today's sales data
+- Delete all today's work sessions
+
+This action cannot be undone!`;
+            
+            if (!confirm(confirmMessage)) {
                 return;
             }
             
