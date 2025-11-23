@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Utility Tests - Best Buy App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #0046be;
+        }
+        button {
+            background: #0046be;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #003a9e;
+        }
+        .result {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-family: monospace;
+        }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Best Buy App - Utility Tests</h1>
+    <p>This page tests the utility functions for cookies, session, and notifications.</p>
+
+    <div class="test-section">
+        <h2>1. Cookie Management Tests</h2>
+        <button onclick="testCookies()">Test Cookie Functions</button>
+        <div id="cookieResults" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Session Management Tests</h2>
+        <button onclick="testSession()">Test Session Save/Restore</button>
+        <button onclick="testClearSession()">Test Clear Session</button>
+        <div id="sessionResults" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Notification Manager Tests</h2>
+        <button onclick="testNotificationPermission()">Request Notification Permission</button>
+        <button onclick="testStartNotifications()">Start Hourly Notifications</button>
+        <button onclick="testShowNotification()">Show Test Notification</button>
+        <button onclick="testStopNotifications()">Stop Notifications</button>
+        <div id="notificationResults" class="result"></div>
+    </div>
+
+    <script src="utils/cookies.js"></script>
+    <script src="utils/session.js"></script>
+    <script src="utils/notifications.js"></script>
+
+    <script>
+        // Cookie Tests
+        function testCookies() {
+            const results = document.getElementById('cookieResults');
+            let output = '<h3>Cookie Tests</h3>';
+            
+            try {
+                // Test 1: Check if cookies are available
+                const available = areCookiesAvailable();
+                output += `<div class="${available ? 'success' : 'error'}">✓ Cookies Available: ${available}</div>`;
+                
+                // Test 2: Set a cookie
+                setCookie('test_cookie', 'test_value', 1);
+                output += '<div class="success">✓ Cookie Set: test_cookie=test_value</div>';
+                
+                // Test 3: Get the cookie
+                const value = getCookie('test_cookie');
+                if (value === 'test_value') {
+                    output += '<div class="success">✓ Cookie Retrieved: ' + value + '</div>';
+                } else {
+                    output += '<div class="error">✗ Cookie Get Failed: Expected "test_value", got "' + value + '"</div>';
+                }
+                
+                // Test 4: Delete the cookie
+                deleteCookie('test_cookie');
+                const deletedValue = getCookie('test_cookie');
+                if (deletedValue === null) {
+                    output += '<div class="success">✓ Cookie Deleted Successfully</div>';
+                } else {
+                    output += '<div class="error">✗ Cookie Delete Failed: Still exists</div>';
+                }
+                
+            } catch (error) {
+                output += '<div class="error">✗ Error: ' + error.message + '</div>';
+            }
+            
+            results.innerHTML = output;
+        }
+
+        // Session Tests
+        function testSession() {
+            const results = document.getElementById('sessionResults');
+            let output = '<h3>Session Tests</h3>';
+            
+            try {
+                // Test 1: Save session
+                const testUser = {
+                    id: 1,
+                    username: 'testuser',
+                    name: 'Test User',
+                    is_admin: false
+                };
+                
+                saveSession(testUser);
+                output += '<div class="success">✓ Session Saved</div>';
+                
+                // Test 2: Restore session
+                const restored = restoreSession();
+                if (restored && restored.username === 'testuser') {
+                    output += '<div class="success">✓ Session Restored: ' + JSON.stringify(restored, null, 2) + '</div>';
+                } else {
+                    output += '<div class="error">✗ Session Restore Failed</div>';
+                }
+                
+                // Test 3: Check active session
+                const hasActive = hasActiveSession();
+                output += `<div class="${hasActive ? 'success' : 'error'}">✓ Has Active Session: ${hasActive}</div>`;
+                
+            } catch (error) {
+                output += '<div class="error">✗ Error: ' + error.message + '</div>';
+            }
+            
+            results.innerHTML = output;
+        }
+
+        function testClearSession() {
+            const results = document.getElementById('sessionResults');
+            let output = '<h3>Clear Session Test</h3>';
+            
+            try {
+                clearSession();
+                output += '<div class="success">✓ Session Cleared</div>';
+                
+                const restored = restoreSession();
+                if (restored === null) {
+                    output += '<div class="success">✓ Session Verify: No session found (correct)</div>';
+                } else {
+                    output += '<div class="error">✗ Session Still Exists After Clear</div>';
+                }
+                
+            } catch (error) {
+                output += '<div class="error">✗ Error: ' + error.message + '</div>';
+            }
+            
+            results.innerHTML = output;
+        }
+
+        // Notification Tests
+        async function testNotificationPermission() {
+            const results = document.getElementById('notificationResults');
+            let output = '<h3>Notification Permission Test</h3>';
+            
+            try {
+                const granted = await notificationManager.requestPermission();
+                output += `<div class="${granted ? 'success' : 'error'}">Permission: ${granted ? 'Granted' : 'Denied or Unsupported'}</div>`;
+                
+                if (!granted) {
+                    output += '<div>Note: Will use in-app fallback banner</div>';
+                }
+            } catch (error) {
+                output += '<div class="error">✗ Error: ' + error.message + '</div>';
+            }
+            
+            results.innerHTML = output;
+        }
+
+        function testStartNotifications() {
+            const results = document.getElementById('notificationResults');
+            let output = '<h3>Start Notifications Test</h3>';
+            
+            try {
+                notificationManager.startHourlyNotifications();
+                output += '<div class="success">✓ Notifications Started</div>';
+                output += '<div>Notifications will fire at the top of each hour</div>';
+                output += `<div>Is Active: ${notificationManager.isActive()}</div>`;
+            } catch (error) {
+                output += '<div class="error">✗ Error: ' + error.message + '</div>';
+            }
+            
+            results.innerHTML = output;
+        }
+
+        function testShowNotification() {
+            const results = document.getElementById('notificationResults');
+            let output = '<h3>Show Notification Test</h3>';
+            
+            try {
+                notificationManager.showNotification();
+                output += '<div class="success">✓ Test Notification Triggered</div>';
+                output += '<div>Check for browser notification or in-app banner</div>';
+            } catch (error) {
+                output += '<div class="error">✗ Error: ' + error.message + '</div>';
+            }
+            
+            results.innerHTML = output;
+        }
+
+        function testStopNotifications() {
+            const results = document.getElementById('notificationResults');
+            let output = '<h3>Stop Notifications Test</h3>';
+            
+            try {
+                notificationManager.stopNotifications();
+                output += '<div class="success">✓ Notifications Stopped</div>';
+                output += `<div>Is Active: ${notificationManager.isActive()}</div>`;
+            } catch (error) {
+                output += '<div class="error">✗ Error: ' + error.message + '</div>';
+            }
+            
+            results.innerHTML = output;
+        }
+    </script>
+</body>
+</html>

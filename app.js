@@ -1,9 +1,20 @@
 // Application State
 let currentUser = null;
 let currentSession = null;
+let pendingRevenueData = null; // For high-value override flow
 
 // API Base URL - adjust this based on your server setup
 const API_BASE = 'api/';
+
+// Try to restore session on page load
+window.addEventListener('DOMContentLoaded', () => {
+    const savedSession = restoreSession();
+    if (savedSession && !savedSession.is_admin) {
+        // Restore employee session
+        currentUser = savedSession;
+        checkTodaySession();
+    }
+});
 
 // Screen Management
 function showScreen(screenId) {
@@ -86,6 +97,12 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         
         if (data.success) {
             currentUser = data.user;
+            
+            // Save session with cookie persistence (only for non-admin users)
+            if (!currentUser.is_admin) {
+                saveSession(currentUser);
+            }
+            
             document.getElementById('employeeName').textContent = currentUser.name;
             updateAnimalEmoji(currentUser.animal_choice);
             updateStats(currentUser.health, currentUser.happiness);
@@ -249,6 +266,66 @@ document.getElementById('feedForm').addEventListener('submit', async (e) => {
         return;
     }
     
+    // Check for high-value revenue (> 8000)
+    if (revenue > 8000) {
+        // Store pending data and show override modal
+        pendingRevenueData = {
+            revenue: revenue,
+            hasCreditCard: hasCreditCard,
+            hasPaidMembership: hasPaidMembership,
+            hasWarranty: hasWarranty,
+            overriddenHighValue: false
+        };
+        
+        showRevenueOverrideModal(revenue);
+        return;
+    }
+    
+    // Process normal revenue
+    await submitRevenue({
+        revenue: revenue,
+        hasCreditCard: hasCreditCard,
+        hasPaidMembership: hasPaidMembership,
+        hasWarranty: hasWarranty,
+        overriddenHighValue: false
+    });
+});
+
+// Revenue Override Modal Functions
+function showRevenueOverrideModal(amount) {
+    document.getElementById('highRevenueAmount').textContent = formatCurrency(amount);
+    document.getElementById('revenueOverrideModal').style.display = 'flex';
+}
+
+function hideRevenueOverrideModal() {
+    document.getElementById('revenueOverrideModal').style.display = 'none';
+    pendingRevenueData = null;
+}
+
+// Handle Cancel button in override modal
+document.getElementById('cancelRevenueBtn').addEventListener('click', () => {
+    hideRevenueOverrideModal();
+});
+
+// Handle Override button in override modal
+document.getElementById('overrideRevenueBtn').addEventListener('click', async () => {
+    if (pendingRevenueData) {
+        pendingRevenueData.overriddenHighValue = true;
+        await submitRevenue(pendingRevenueData);
+        hideRevenueOverrideModal();
+    }
+});
+
+// Close modal when clicking outside
+window.addEventListener('click', (e) => {
+    const modal = document.getElementById('revenueOverrideModal');
+    if (e.target === modal) {
+        hideRevenueOverrideModal();
+    }
+});
+
+// Submit revenue function (extracted for reuse)
+async function submitRevenue(data) {
     try {
         const response = await fetch(API_BASE + 'feed.php', {
             method: 'POST',
@@ -257,25 +334,26 @@ document.getElementById('feedForm').addEventListener('submit', async (e) => {
             },
             body: JSON.stringify({
                 user_id: currentUser.id,
-                revenue: revenue,
-                has_credit_card: hasCreditCard,
-                has_paid_membership: hasPaidMembership,
-                has_warranty: hasWarranty
+                revenue: data.revenue,
+                has_credit_card: data.hasCreditCard,
+                has_paid_membership: data.hasPaidMembership,
+                has_warranty: data.hasWarranty,
+                overridden_high_value: data.overriddenHighValue
             })
         });
         
-        const data = await response.json();
+        const responseData = await response.json();
         
-        if (data.success) {
+        if (responseData.success) {
             // Update stats
-            updateStats(data.health, data.happiness);
-            document.getElementById('totalRevenue').textContent = formatCurrency(data.total_revenue);
+            updateStats(responseData.health, responseData.happiness);
+            document.getElementById('totalRevenue').textContent = formatCurrency(responseData.total_revenue);
             
             // Update current session revenue and counters
-            currentSession.revenue = (currentSession.revenue || 0) + revenue;
-            if (hasCreditCard) currentSession.current_credit_cards = (currentSession.current_credit_cards || 0) + 1;
-            if (hasPaidMembership) currentSession.current_paid_memberships = (currentSession.current_paid_memberships || 0) + 1;
-            currentSession.goal_met = data.goal_met;
+            currentSession.revenue = (currentSession.revenue || 0) + data.revenue;
+            if (data.hasCreditCard) currentSession.current_credit_cards = (currentSession.current_credit_cards || 0) + 1;
+            if (data.hasPaidMembership) currentSession.current_paid_memberships = (currentSession.current_paid_memberships || 0) + 1;
+            currentSession.goal_met = responseData.goal_met;
             updateGoalsDisplay();
             
             // Clear form and show success
@@ -283,7 +361,12 @@ document.getElementById('feedForm').addEventListener('submit', async (e) => {
             document.getElementById('hasCreditCard').checked = false;
             document.getElementById('hasPaidMembership').checked = false;
             document.getElementById('hasWarranty').checked = false;
-            showSuccess('feedMessage', data.message + ' +' + formatCurrency(revenue));
+            
+            let successMessage = responseData.message + ' +' + formatCurrency(data.revenue);
+            if (data.overriddenHighValue) {
+                successMessage += ' (High-value override applied)';
+            }
+            showSuccess('feedMessage', successMessage);
             
             // Add animation effect
             const animalSprite = document.querySelector('.animal-sprite');
@@ -292,16 +375,19 @@ document.getElementById('feedForm').addEventListener('submit', async (e) => {
                 animalSprite.style.animation = 'float 3s ease-in-out infinite';
             }, 10);
         } else {
-            showError('feedError', data.error || 'Failed to feed animal');
+            showError('feedError', responseData.error || 'Failed to feed animal');
         }
     } catch (error) {
         showError('feedError', 'Connection error. Please try again.');
         console.error('Feed error:', error);
     }
-});
+}
 
 // Logout Handler
 document.getElementById('logoutBtn').addEventListener('click', () => {
+    // Clear session
+    clearSession();
+    
     currentUser = null;
     currentSession = null;
     document.getElementById('loginForm').reset();
