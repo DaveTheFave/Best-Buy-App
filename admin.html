@@ -597,6 +597,7 @@
     <script>
         let adminUser = null;
         let adminSession = null;
+        let notificationManager = null;
         const API_BASE = 'api/';
         
         // Configuration constants
@@ -841,10 +842,10 @@
             pets.forEach(pet => {
                 // Each pet object should have current_credit_cards and current_paid_memberships from today's session
                 if (pet.current_credit_cards) {
-                    totalCreditCards += parseInt(pet.current_credit_cards);
+                    totalCreditCards += parseInt(pet.current_credit_cards, 10);
                 }
                 if (pet.current_paid_memberships) {
-                    totalPaidMemberships += parseInt(pet.current_paid_memberships);
+                    totalPaidMemberships += parseInt(pet.current_paid_memberships, 10);
                 }
             });
             
