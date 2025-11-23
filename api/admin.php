@@ -56,7 +56,9 @@ if ($method === 'GET') {
                                 COALESCE(a.total_revenue, 0) as total_revenue,
                                 COALESCE(a.last_fed, NOW()) as last_fed,
                                 a.last_health_reset,
-                                CASE WHEN ws.id IS NOT NULL THEN 1 ELSE 0 END as has_session_today
+                                CASE WHEN ws.id IS NOT NULL THEN 1 ELSE 0 END as has_session_today,
+                                COALESCE(ws.current_credit_cards, 0) as current_credit_cards,
+                                COALESCE(ws.current_paid_memberships, 0) as current_paid_memberships
                                 FROM users u
                                 LEFT JOIN animal_stats a ON u.id = a.user_id
                                 LEFT JOIN work_sessions ws ON u.id = ws.user_id AND ws.session_date = ?
