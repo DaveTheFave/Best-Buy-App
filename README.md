@@ -12,6 +12,10 @@ A gamified performance tracking system for Best Buy employees. Keep your virtual
 - 🎯 **Goal tracking** - Monitor progress toward daily targets
 - 🔄 **Daily health reset** - Health decay timer resets each day for a fresh start
 - 👨‍💼 **Admin dashboard** - Monitor all employee pets' health (admin access only)
+- 🍪 **Session persistence** - Stay logged in for 7 days with secure cookies
+- ⚠️ **High-value alerts** - Confirmation required for revenue entries over $8,000
+- 🔔 **Hourly reminders** - Browser notifications to feed your pet on time
+- 📱 **Apps & Memberships** - Manage employee apps and memberships
 
 ## Technology Stack
 
@@ -101,6 +105,15 @@ Administrators can access the admin dashboard at `/admin.html` to:
 - View all employee pets and their health status
 - Monitor team performance metrics
 - Track active work sessions
+- Manage apps and memberships
+- Receive hourly pet-feeding notifications
+- Reset session and clear all data
+
+**New Admin Features:**
+- **Session Reset Button**: Clear cookies, timers, and log out instantly
+- **Cookie Persistence**: Stay logged in for 7 days across browser restarts
+- **Hourly Notifications**: Get reminders to feed pets (with in-app fallback)
+- **Apps & Memberships**: Add and manage apps/memberships with local persistence
 
 **To create admin users (after initial setup):**
 ```sql
@@ -169,15 +182,20 @@ The app is fully responsive and optimized for:
 
 ## Migration for Existing Installations
 
-If you're updating from a previous version, run the migration script:
+If you're updating from a previous version, run the migration scripts:
 
 ```bash
+# For daily reset feature
 mysql -u root -p bestbuy_tamagotchi < migration_daily_reset.sql
+
+# For high-value override tracking
+mysql -u root -p bestbuy_tamagotchi < migration_high_value_override.sql
 ```
 
-This will add:
+These migrations will add:
 - The `last_health_reset` column for daily health reset tracking
 - The `is_admin` column for admin authentication
+- The `overridden_high_value` column for tracking high-value revenue overrides
 
 **After migration, manually grant admin access to authorized users:**
 ```sql
