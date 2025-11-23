@@ -15,12 +15,13 @@ if ($method === 'POST') {
     $conn = getDBConnection();
 
     // Check if user exists. Also select the animal_stats.id so we can detect if stats exist.
-    $stmt = $conn->prepare("SELECT u.id, u.username, u.name, u.animal_choice, 
+    $stmt = $conn->prepare("SELECT u.id, u.username, u.name, u.animal_choice, u.is_admin,
                             a.id AS stat_id,
                             COALESCE(a.health, 100) as health, 
                             COALESCE(a.happiness, 100) as happiness,
                             COALESCE(a.last_fed, NOW()) as last_fed,
-                            COALESCE(a.total_revenue, 0) as total_revenue
+                            COALESCE(a.total_revenue, 0) as total_revenue,
+                            a.last_health_reset
                             FROM users u
                             LEFT JOIN animal_stats a ON u.id = a.user_id
                             WHERE u.username = ?");
@@ -44,25 +45,66 @@ if ($method === 'POST') {
     if ($result->num_rows > 0) {
         $user = $result->fetch_assoc();
         
-        // Update health based on time since last fed
-        $lastFed = strtotime($user['last_fed']);
-        $now = time();
-        $hoursSinceLastFed = ($now - $lastFed) / 3600;
+        // Check if we need to reset health for a new day
+        $today = date('Y-m-d');
+        $lastResetDate = $user['last_health_reset'];
+        $currentHealth = $user['health'];
         
-        // Decrease health by 5 per hour not fed (max decrease to 0)
-        $healthDecrease = min($user['health'], floor($hoursSinceLastFed * 5));
-        $currentHealth = max(0, $user['health'] - $healthDecrease);
+        // If last_health_reset is NULL or it's a new day, reset health decay calculation
+        if ($lastResetDate === NULL || $lastResetDate < $today) {
+            // New day - reset the health decay timer
+            // Check if there's an active work session for today
+            $sessionCheckStmt = $conn->prepare("SELECT id FROM work_sessions WHERE user_id = ? AND session_date = ?");
+            if ($sessionCheckStmt) {
+                $sessionCheckStmt->bind_param("is", $user['id'], $today);
+                $sessionCheckStmt->execute();
+                $sessionResult = $sessionCheckStmt->get_result();
+                
+                if ($sessionResult->num_rows > 0) {
+                    // There's a work session today, apply health decay since last fed TODAY
+                    $lastFed = strtotime($user['last_fed']);
+                    $lastFedDate = date('Y-m-d', $lastFed);
+                    
+                    // Only decay health if last fed was today
+                    if ($lastFedDate === $today) {
+                        $now = time();
+                        $hoursSinceLastFed = ($now - $lastFed) / 3600;
+                        $healthDecrease = min($currentHealth, floor($hoursSinceLastFed * 5));
+                        $currentHealth = max(0, $currentHealth - $healthDecrease);
+                    }
+                    // If last fed was a previous day, don't decay (new day starts fresh)
+                } else {
+                    // No work session today, no health decay (pet is "resting")
+                }
+                $sessionCheckStmt->close();
+            }
+            
+            // Update the last_health_reset to today
+            $lastResetDate = $today;
+        } else {
+            // Same day - apply normal health decay
+            $lastFed = strtotime($user['last_fed']);
+            $lastFedDate = date('Y-m-d', $lastFed);
+            
+            // Only decay if last fed was today
+            if ($lastFedDate === $today) {
+                $now = time();
+                $hoursSinceLastFed = ($now - $lastFed) / 3600;
+                $healthDecrease = min($currentHealth, floor($hoursSinceLastFed * 5));
+                $currentHealth = max(0, $currentHealth - $healthDecrease);
+            }
+        }
         
         // Update animal stats if they exist (detect via stat_id), otherwise create them
         if (!empty($user['stat_id'])) {
-            $updateStmt = $conn->prepare("UPDATE animal_stats SET health = ? WHERE user_id = ?");
+            $updateStmt = $conn->prepare("UPDATE animal_stats SET health = ?, last_health_reset = ? WHERE user_id = ?");
             if (!$updateStmt) {
                 echo json_encode(['success' => false, 'error' => 'DB prepare failed (update): ' . $conn->error]);
                 $stmt->close();
                 $conn->close();
                 exit;
             }
-            $updateStmt->bind_param("ii", $currentHealth, $user['id']);
+            $updateStmt->bind_param("isi", $currentHealth, $lastResetDate, $user['id']);
             if (!$updateStmt->execute()) {
                 echo json_encode(['success' => false, 'error' => 'DB execute failed (update): ' . $updateStmt->error]);
                 $updateStmt->close();
@@ -73,14 +115,14 @@ if ($method === 'POST') {
             $updateStmt->close();
         } else {
             // Create animal stats if they don't exist
-            $insertStmt = $conn->prepare("INSERT INTO animal_stats (user_id, health, happiness) VALUES (?, ?, 100)");
+            $insertStmt = $conn->prepare("INSERT INTO animal_stats (user_id, health, happiness, last_health_reset) VALUES (?, ?, 100, ?)");
             if (!$insertStmt) {
                 echo json_encode(['success' => false, 'error' => 'DB prepare failed (insert): ' . $conn->error]);
                 $stmt->close();
                 $conn->close();
                 exit;
             }
-            $insertStmt->bind_param("ii", $user['id'], $currentHealth);
+            $insertStmt->bind_param("iis", $user['id'], $currentHealth, $lastResetDate);
             if (!$insertStmt->execute()) {
                 echo json_encode(['success' => false, 'error' => 'DB execute failed (insert): ' . $insertStmt->error]);
                 $insertStmt->close();
