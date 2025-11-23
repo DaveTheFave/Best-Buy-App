@@ -86,7 +86,7 @@ class NotificationManager {
             // Show browser notification
             const notification = new Notification('🐾 Time to feed your pet!', {
                 body: 'Your pet is hungry! Enter some revenue to keep them happy.',
-                icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="75" font-size="75">🐾</text></svg>',
+                icon: 'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ctext%20y%3D%2275%22%20font-size%3D%2275%22%3E%F0%9F%90%BE%3C%2Ftext%3E%3C%2Fsvg%3E',
                 tag: 'pet-feeding-reminder',
                 requireInteraction: false
             });

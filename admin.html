@@ -885,12 +885,20 @@
                             <span class="app-item-type">${escapeHtml(item.type)}</span>
                             ${item.notes ? `<div class="app-item-notes">${escapeHtml(item.notes)}</div>` : ''}
                         </div>
-                        <button class="remove-btn" onclick="removeAppMembership(${index})">Remove</button>
+                        <button class="remove-btn" data-index="${index}">Remove</button>
                     </li>
                 `;
             });
             
             listElement.innerHTML = html;
+            
+            // Add event delegation for remove buttons
+            listElement.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'), 10);
+                    removeAppMembership(index);
+                });
+            });
         }
 
         function addAppMembership() {

@@ -50,8 +50,13 @@ function getCookie(name) {
  * @param {string} name - Cookie name
  */
 function deleteCookie(name) {
-    // Set cookie with past expiration date
-    document.cookie = `${encodeURIComponent(name)}=; path=/; max-age=0`;
+    const isSecure = window.location.protocol === 'https:';
+    // Set cookie with past expiration date and matching attributes
+    let cookie = `${encodeURIComponent(name)}=; path=/; max-age=0; SameSite=Lax`;
+    if (isSecure) {
+        cookie += `; Secure`;
+    }
+    document.cookie = cookie;
 }
 
 /**

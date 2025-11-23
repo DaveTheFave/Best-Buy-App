@@ -5,6 +5,8 @@
 
 const SESSION_COOKIE_NAME = 'bestbuy_employee_session';
 const SESSION_STORAGE_KEY = 'bestbuy_employee_session';
+const SESSION_EXPIRATION_DAYS = 7;
+const SESSION_EXPIRATION_MS = SESSION_EXPIRATION_DAYS * 24 * 60 * 60 * 1000;
 
 /**
  * Save employee session to cookies (or localStorage as fallback)
@@ -25,7 +27,7 @@ function saveSession(userData) {
     
     // Try to save to cookie first
     if (areCookiesAvailable()) {
-        setCookie(SESSION_COOKIE_NAME, sessionData, 7); // 7 days
+        setCookie(SESSION_COOKIE_NAME, sessionData, SESSION_EXPIRATION_DAYS);
     } else {
         // Fallback to localStorage
         try {
@@ -65,10 +67,9 @@ function restoreSession() {
         }
     }
     
-    // Validate session data (check if expired - 7 days)
+    // Validate session data (check if expired)
     if (sessionData) {
-        const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-        const isExpired = Date.now() - sessionData.timestamp > SEVEN_DAYS_MS;
+        const isExpired = Date.now() - sessionData.timestamp > SESSION_EXPIRATION_MS;
         
         if (isExpired) {
             clearSession();
