@@ -674,6 +674,8 @@
         const APPS_STORAGE_KEY = 'admin_apps_memberships';
         
         // Configuration constants
+        // Note: DEFAULT_SHIFT_END_HOUR should match NotificationManager.DEFAULT_END_HOUR
+        // We declare it here to avoid tight coupling with the NotificationManager module
         const DEFAULT_SHIFT_END_HOUR = 21; // Must match NotificationManager.DEFAULT_END_HOUR
 
         // Initialize apps & memberships from storage

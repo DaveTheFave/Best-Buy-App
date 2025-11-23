@@ -16,6 +16,7 @@ class NotificationManager {
     static MS_PER_SECOND = 1000;
     static MS_PER_MINUTE = 60000;
     static MS_PER_HOUR = 3600000;
+    static MINUTES_PER_HOUR = 60;
     static HOURS_PER_DAY = 24;
 
     constructor(options = {}) {
@@ -292,7 +293,7 @@ class NotificationManager {
         const currentMs = date.getMilliseconds();
 
         // Calculate ms to next top of hour
-        const msToNextHour = (60 - currentMinute) * NotificationManager.MS_PER_MINUTE - 
+        const msToNextHour = (NotificationManager.MINUTES_PER_HOUR - currentMinute) * NotificationManager.MS_PER_MINUTE - 
                             currentSecond * NotificationManager.MS_PER_SECOND - currentMs;
         
         // Start checking from the next top of hour
