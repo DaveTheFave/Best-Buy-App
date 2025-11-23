@@ -324,6 +324,164 @@
         #adminDashboard.active {
             display: block;
         }
+
+        /* Apps & Memberships Section */
+        .apps-memberships-section {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .apps-memberships-section h2 {
+            margin: 0 0 20px 0;
+            color: #0046be;
+        }
+
+        .apps-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 20px 0;
+        }
+
+        .app-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .app-item-info {
+            flex: 1;
+        }
+
+        .app-item-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .app-item-type {
+            font-size: 0.85em;
+            color: #666;
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .app-item-notes {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .remove-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+
+        .remove-btn:hover {
+            background: #c82333;
+        }
+
+        .add-app-form {
+            display: grid;
+            gap: 15px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .add-app-form input, .add-app-form select {
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .add-app-form input:focus, .add-app-form select:focus {
+            outline: none;
+            border-color: #0046be;
+        }
+
+        .add-app-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .add-app-btn:hover {
+            background: #218838;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+        }
+
+        /* Reset Session Button */
+        .reset-session-btn {
+            background: #dc3545;
+            color: white;
+            border: 1px solid #c82333;
+            padding: 8px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+
+        .reset-session-btn:hover {
+            background: #c82333;
+        }
+
+        /* Notification Permission Banner */
+        .notification-permission-banner {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notification-permission-banner button {
+            background: white;
+            color: #17a2b8;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .notification-permission-banner button:hover {
+            background: #f8f9fa;
+        }
+
+        .notification-permission-banner.hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -351,7 +509,39 @@
                 <p>Monitor all employee pets and their health status</p>
                 <div class="header-controls">
                     <div class="admin-info">Logged in as: <strong id="adminName"></strong></div>
-                    <button class="logout-btn" onclick="logout()">Logout</button>
+                    <div>
+                        <button class="reset-session-btn" onclick="resetSession()">🔄 Reset Session</button>
+                        <button class="logout-btn" onclick="logout()">Logout</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notification Permission Banner -->
+            <div id="notificationBanner" class="notification-permission-banner hidden">
+                <div>
+                    <strong>🔔 Enable Pet Feeding Reminders</strong>
+                    <p style="margin: 5px 0 0 0; font-size: 0.9em;">Get hourly notifications to feed your pet on time!</p>
+                </div>
+                <button onclick="enableNotifications()">Enable Notifications</button>
+            </div>
+
+            <!-- Apps & Memberships Section -->
+            <div class="apps-memberships-section">
+                <h2>📱 Apps & Memberships</h2>
+                <div id="appsListContainer">
+                    <ul id="appsList" class="apps-list"></ul>
+                </div>
+                <div class="add-app-form">
+                    <h3 style="margin: 0 0 10px 0;">Add New App/Membership</h3>
+                    <input type="text" id="appName" placeholder="Name (e.g., Spotify Premium)" required>
+                    <select id="appType">
+                        <option value="app">App</option>
+                        <option value="membership">Membership</option>
+                        <option value="service">Service</option>
+                        <option value="subscription">Subscription</option>
+                    </select>
+                    <input type="text" id="appNotes" placeholder="Optional notes">
+                    <button class="add-app-btn" onclick="addAppMembership()">➕ Add</button>
                 </div>
             </div>
 
@@ -387,9 +577,37 @@
         </div>
     </div>
 
+    <!-- Import utility scripts -->
+    <script src="utils/cookies.js"></script>
+    <script src="utils/session.js"></script>
+    <script src="utils/notifications.js"></script>
+
     <script>
         let adminUser = null;
         const API_BASE = 'api/';
+        const APPS_STORAGE_KEY = 'admin_apps_memberships';
+
+        // Initialize apps & memberships from storage
+        let appsMemberships = [];
+
+        // Try to restore session on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedSession = restoreSession();
+            if (savedSession && savedSession.is_admin) {
+                // Restore admin session
+                adminUser = savedSession;
+                document.getElementById('adminName').textContent = adminUser.name;
+                document.getElementById('adminLoginScreen').classList.add('hidden');
+                document.getElementById('adminDashboard').classList.add('active');
+                loadPetData();
+                
+                // Load apps & memberships
+                loadAppsMemberships();
+                
+                // Check notification permission and start if granted
+                initializeNotifications();
+            }
+        });
 
         // Admin Login Handler
         document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
@@ -416,10 +634,20 @@
                 if (data.success) {
                     if (data.user.is_admin) {
                         adminUser = data.user;
+                        
+                        // Save session with cookie persistence
+                        saveSession(adminUser);
+                        
                         document.getElementById('adminName').textContent = adminUser.name;
                         document.getElementById('adminLoginScreen').classList.add('hidden');
                         document.getElementById('adminDashboard').classList.add('active');
                         loadPetData();
+                        
+                        // Load apps & memberships
+                        loadAppsMemberships();
+                        
+                        // Initialize notifications
+                        initializeNotifications();
                     } else {
                         showLoginError('Access denied. Admin privileges required.');
                     }
@@ -442,10 +670,22 @@
         }
 
         function logout() {
+            // Stop notifications
+            notificationManager.stopNotifications();
+            
+            // Clear session
+            clearSession();
+            
             adminUser = null;
             document.getElementById('adminLoginForm').reset();
             document.getElementById('adminLoginScreen').classList.remove('hidden');
             document.getElementById('adminDashboard').classList.remove('active');
+        }
+
+        function resetSession() {
+            if (confirm('Are you sure you want to reset your session? This will log you out and clear all timers.')) {
+                logout();
+            }
         }
 
         async function loadPetData() {
@@ -546,6 +786,155 @@
                 loadPetData();
             }
         }, 30000);
+
+        // ============================================
+        // Notification Management Functions
+        // ============================================
+        
+        function initializeNotifications() {
+            // Check if notifications are already granted
+            if ('Notification' in window && Notification.permission === 'granted') {
+                notificationManager.permissionGranted = true;
+                notificationManager.startHourlyNotifications();
+                document.getElementById('notificationBanner').classList.add('hidden');
+            } else if ('Notification' in window && Notification.permission === 'default') {
+                // Show banner to request permission
+                document.getElementById('notificationBanner').classList.remove('hidden');
+            } else {
+                // Permission denied or not supported - will use fallback
+                document.getElementById('notificationBanner').classList.add('hidden');
+                notificationManager.startHourlyNotifications();
+            }
+        }
+
+        async function enableNotifications() {
+            const granted = await notificationManager.requestPermission(() => {
+                // Permission denied - hide banner and start with fallback
+                document.getElementById('notificationBanner').classList.add('hidden');
+            });
+            
+            if (granted) {
+                notificationManager.startHourlyNotifications();
+                document.getElementById('notificationBanner').classList.add('hidden');
+                alert('Notifications enabled! You\'ll receive hourly reminders to feed your pet.');
+            } else {
+                notificationManager.startHourlyNotifications(); // Will use fallback banner
+                alert('Notifications blocked. We\'ll show in-app reminders instead.');
+            }
+        }
+
+        // ============================================
+        // Apps & Memberships Management Functions
+        // ============================================
+        
+        function loadAppsMemberships() {
+            try {
+                // Try to load from localStorage first
+                const stored = localStorage.getItem(APPS_STORAGE_KEY);
+                if (stored) {
+                    appsMemberships = JSON.parse(stored);
+                } else {
+                    // Try to load from cookie as fallback
+                    const cookieData = getCookie(APPS_STORAGE_KEY);
+                    if (cookieData) {
+                        appsMemberships = JSON.parse(cookieData);
+                    } else {
+                        appsMemberships = [];
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to load apps & memberships:', e);
+                appsMemberships = [];
+            }
+            
+            renderAppsMemberships();
+        }
+
+        function saveAppsMemberships() {
+            const data = JSON.stringify(appsMemberships);
+            
+            // Save to localStorage
+            try {
+                localStorage.setItem(APPS_STORAGE_KEY, data);
+            } catch (e) {
+                console.warn('Failed to save to localStorage:', e);
+            }
+            
+            // Also save to cookie as backup
+            try {
+                setCookie(APPS_STORAGE_KEY, data, 7);
+            } catch (e) {
+                console.warn('Failed to save to cookie:', e);
+            }
+        }
+
+        function renderAppsMemberships() {
+            const listElement = document.getElementById('appsList');
+            
+            if (appsMemberships.length === 0) {
+                listElement.innerHTML = '<div class="empty-state">No apps or memberships added yet. Use the form below to add one!</div>';
+                return;
+            }
+            
+            let html = '';
+            appsMemberships.forEach((item, index) => {
+                html += `
+                    <li class="app-item">
+                        <div class="app-item-info">
+                            <div class="app-item-name">${escapeHtml(item.name)}</div>
+                            <span class="app-item-type">${escapeHtml(item.type)}</span>
+                            ${item.notes ? `<div class="app-item-notes">${escapeHtml(item.notes)}</div>` : ''}
+                        </div>
+                        <button class="remove-btn" onclick="removeAppMembership(${index})">Remove</button>
+                    </li>
+                `;
+            });
+            
+            listElement.innerHTML = html;
+        }
+
+        function addAppMembership() {
+            const name = document.getElementById('appName').value.trim();
+            const type = document.getElementById('appType').value;
+            const notes = document.getElementById('appNotes').value.trim();
+            
+            if (!name) {
+                alert('Please enter a name for the app/membership');
+                return;
+            }
+            
+            // Add to list
+            appsMemberships.push({
+                name: name,
+                type: type,
+                notes: notes,
+                addedAt: Date.now()
+            });
+            
+            // Save and re-render
+            saveAppsMemberships();
+            renderAppsMemberships();
+            
+            // Clear form
+            document.getElementById('appName').value = '';
+            document.getElementById('appType').value = 'app';
+            document.getElementById('appNotes').value = '';
+        }
+
+        function removeAppMembership(index) {
+            if (confirm('Are you sure you want to remove this app/membership?')) {
+                appsMemberships.splice(index, 1);
+                saveAppsMemberships();
+                renderAppsMemberships();
+            }
+        }
+
+        // Utility function to escape HTML and prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
     </script>
 </body>
 </html>

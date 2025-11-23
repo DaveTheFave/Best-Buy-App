@@ -16,18 +16,19 @@ if ($method === 'POST') {
     $hasCreditCard = isset($data['has_credit_card']) ? $data['has_credit_card'] : false;
     $hasPaidMembership = isset($data['has_paid_membership']) ? $data['has_paid_membership'] : false;
     $hasWarranty = isset($data['has_warranty']) ? $data['has_warranty'] : false;
+    $overriddenHighValue = isset($data['overridden_high_value']) ? $data['overridden_high_value'] : false;
     $sessionDate = date('Y-m-d');
     
     $conn = getDBConnection();
 
     // Record the sale with its special features
-    $saleStmt = $conn->prepare("INSERT INTO sales (user_id, session_date, revenue, has_credit_card, has_paid_membership, has_warranty) VALUES (?, ?, ?, ?, ?, ?)");
+    $saleStmt = $conn->prepare("INSERT INTO sales (user_id, session_date, revenue, has_credit_card, has_paid_membership, has_warranty, overridden_high_value) VALUES (?, ?, ?, ?, ?, ?, ?)");
     if (!$saleStmt) {
         echo json_encode(['success' => false, 'error' => 'DB prepare failed (insert sale): ' . $conn->error]);
         $conn->close();
         exit;
     }
-    $saleStmt->bind_param("isdiii", $userId, $sessionDate, $revenue, $hasCreditCard, $hasPaidMembership, $hasWarranty);
+    $saleStmt->bind_param("isdiiii", $userId, $sessionDate, $revenue, $hasCreditCard, $hasPaidMembership, $hasWarranty, $overriddenHighValue);
     if (!$saleStmt->execute()) {
         echo json_encode(['success' => false, 'error' => 'DB execute failed (insert sale): ' . $saleStmt->error]);
         $saleStmt->close();

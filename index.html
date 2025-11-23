@@ -191,6 +191,22 @@
         </div>
     </div>
 
+    <!-- Revenue Override Modal -->
+    <div id="revenueOverrideModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>⚠️ High Revenue Amount Detected</h2>
+            <p style="margin: 15px 0;">You entered a revenue amount of <strong id="highRevenueAmount"></strong>, which is unusually high (over $8,000).</p>
+            <p style="color: #666; font-size: 0.95em;">Please confirm this amount is correct before proceeding.</p>
+            <div style="display: flex; gap: 10px; margin-top: 25px;">
+                <button id="cancelRevenueBtn" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+                <button id="overrideRevenueBtn" class="btn btn-primary" style="flex: 1;">Override and Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import utility scripts -->
+    <script src="utils/cookies.js"></script>
+    <script src="utils/session.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
