@@ -56,11 +56,11 @@ CREATE TABLE IF NOT EXISTS sales (
 );
 
 -- Sample data (you can insert actual employee data here)
+-- Note: To create admin users, set is_admin = TRUE manually for security
 INSERT INTO users (username, name, animal_choice, is_admin) VALUES 
 ('employee1', 'John Doe', 'cat', FALSE),
 ('employee2', 'Jane Smith', 'dog', FALSE),
-('employee3', 'Bob Johnson', 'bird', FALSE),
-('admin', 'Admin User', 'cat', TRUE)
+('employee3', 'Bob Johnson', 'bird', FALSE)
 ON DUPLICATE KEY UPDATE username=username;
 
 -- Initialize animal stats for sample users

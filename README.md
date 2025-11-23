@@ -102,10 +102,13 @@ Administrators can access the admin dashboard at `/admin.html` to:
 - Monitor team performance metrics
 - Track active work sessions
 
-**To create admin users:**
+**To create admin users (after initial setup):**
 ```sql
+-- Replace 'your_admin_username' with the actual username
 UPDATE users SET is_admin = TRUE WHERE username = 'your_admin_username';
 ```
+
+**Important Security Note**: Admin access should be granted manually to specific users. Do not create default admin accounts with predictable usernames.
 
 ## Game Mechanics
 
@@ -175,7 +178,11 @@ mysql -u root -p bestbuy_tamagotchi < migration_daily_reset.sql
 This will add:
 - The `last_health_reset` column for daily health reset tracking
 - The `is_admin` column for admin authentication
-- A default admin user (username: 'admin')
+
+**After migration, manually grant admin access to authorized users:**
+```sql
+UPDATE users SET is_admin = TRUE WHERE username = 'your_admin_username';
+```
 
 ## Security Notes
 

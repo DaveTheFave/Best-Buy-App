@@ -16,7 +16,5 @@ WHERE last_health_reset IS NULL;
 ALTER TABLE users
 ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;
 
--- Create a default admin user if it doesn't exist
-INSERT INTO users (username, name, animal_choice, is_admin) 
-VALUES ('admin', 'Admin User', 'cat', TRUE)
-ON DUPLICATE KEY UPDATE is_admin=TRUE;
+-- Note: To create an admin user, run the following command manually with your chosen username:
+-- UPDATE users SET is_admin = TRUE WHERE username = 'your_admin_username';
