@@ -478,6 +478,62 @@
         .notification-permission-banner.hidden {
             display: none;
         }
+
+        /* Edit Button */
+        .btn-edit {
+            background: #0046be;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: background 0.2s;
+        }
+
+        .btn-edit:hover {
+            background: #003a9e;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal .modal-content h2 {
+            margin: 0 0 10px 0;
+            color: #0046be;
+        }
+
+        .modal .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .modal .error-message:not(:empty) {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -589,7 +645,31 @@
         </div>
     </div>
 
+    <!-- Edit Counts Modal -->
+    <div id="editCountsModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Edit Credit Cards & Memberships</h2>
+            <p id="editEmployeeName" style="margin: 10px 0; color: #666;"></p>
+            <form id="editCountsForm" style="margin-top: 20px;">
+                <div class="form-group">
+                    <label for="editCreditCards">💳 Credit Cards</label>
+                    <input type="number" id="editCreditCards" name="creditCards" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="editPaidMemberships">⭐ Paid Memberships</label>
+                    <input type="number" id="editPaidMemberships" name="paidMemberships" min="0" required>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 25px;">
+                    <button type="button" id="cancelEditBtn" class="btn-secondary" style="flex: 1; padding: 10px;">Cancel</button>
+                    <button type="submit" class="btn-primary" style="flex: 1; padding: 10px; background: #0046be; color: white; border: none; border-radius: 5px; cursor: pointer;">Save</button>
+                </div>
+            </form>
+            <div id="editCountsError" class="error-message" style="margin-top: 15px;"></div>
+        </div>
+    </div>
+
     <!-- Import utility scripts -->
+    <script src="utils/animal-status.js"></script>
     <script src="utils/cookies.js"></script>
     <script src="utils/session.js"></script>
     <script src="js/notifications.js"></script>
@@ -860,6 +940,8 @@
             document.getElementById('avgHappiness').textContent = Math.round(summary.avg_happiness) + '%';
         }
 
+        // getAnimalStatus function is now in utils/animal-status.js
+
         function renderTable(pets) {
             const emojiMap = {
                 'cat': '🐱',
@@ -876,13 +958,17 @@
             html += '<th>Health</th>';
             html += '<th>Happiness</th>';
             html += '<th>Total Revenue</th>';
-            html += '<th>Status</th>';
+            html += '<th>CC / PM</th>';
+            html += '<th>Animal Status</th>';
+            html += '<th>Session Status</th>';
+            html += '<th>Actions</th>';
             html += '</tr></thead><tbody>';
 
             pets.forEach(pet => {
                 const emoji = emojiMap[pet.animal_choice.toLowerCase()] || '🐱';
                 const healthClass = pet.health >= 70 ? 'good' : (pet.health >= 40 ? 'medium' : '');
                 const isActive = pet.has_session_today ? 'active' : 'inactive';
+                const statusInfo = getAnimalStatus(pet.health, pet.happiness);
                 
                 html += '<tr>';
                 html += `<td><span class="pet-emoji">${emoji}</span></td>`;
@@ -904,18 +990,116 @@
                     </div>
                 </td>`;
                 html += `<td>$${parseFloat(pet.total_revenue).toFixed(2)}</td>`;
+                html += `<td style="text-align: center;">
+                    <div style="font-size: 0.9em;">
+                        <div>💳 ${pet.current_credit_cards || 0}</div>
+                        <div>⭐ ${pet.current_paid_memberships || 0}</div>
+                    </div>
+                </td>`;
+                html += `<td style="text-align: center;">
+                    <span style="font-size: 1.5em; color: ${statusInfo.color};">${statusInfo.emoji}</span><br>
+                    <span style="font-size: 0.9em; color: ${statusInfo.color}; font-weight: 600;">${statusInfo.status}</span>
+                </td>`;
                 html += `<td><span class="status-badge ${isActive}">${isActive === 'active' ? 'Active Today' : 'Inactive'}</span></td>`;
+                html += `<td style="text-align: center;">`;
+                if (isActive) {
+                    html += `<button class="btn-edit" data-user-id="${pet.id}" data-user-name="${pet.name.replace(/"/g, '&quot;')}" data-cc="${pet.current_credit_cards || 0}" data-pm="${pet.current_paid_memberships || 0}">Edit Counts</button>`;
+                } else {
+                    html += '<span style="color: #999;">-</span>';
+                }
+                html += `</td>`;
                 html += '</tr>';
             });
 
             html += '</tbody></table>';
             document.getElementById('tableContent').innerHTML = html;
+            
+            // Add click event listeners to edit buttons using data attributes
+            document.querySelectorAll('.btn-edit').forEach(button => {
+                button.addEventListener('click', function() {
+                    const userId = parseInt(this.getAttribute('data-user-id'));
+                    const userName = this.getAttribute('data-user-name');
+                    const cc = parseInt(this.getAttribute('data-cc'));
+                    const pm = parseInt(this.getAttribute('data-pm'));
+                    openEditModal(userId, userName, cc, pm);
+                });
+            });
         }
 
         function showError(message) {
             document.getElementById('tableContent').innerHTML = 
                 `<div class="error-message">${message}</div>`;
         }
+
+        // ============================================
+        // Edit Counts Modal Functions
+        // ============================================
+        
+        let currentEditUserId = null;
+        
+        function openEditModal(userId, userName, currentCC, currentPM) {
+            currentEditUserId = userId;
+            document.getElementById('editEmployeeName').textContent = `Employee: ${userName}`;
+            document.getElementById('editCreditCards').value = currentCC;
+            document.getElementById('editPaidMemberships').value = currentPM;
+            document.getElementById('editCountsModal').style.display = 'flex';
+        }
+        
+        function closeEditModal() {
+            currentEditUserId = null;
+            document.getElementById('editCountsModal').style.display = 'none';
+            document.getElementById('editCountsError').textContent = '';
+        }
+        
+        document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
+        
+        document.getElementById('editCountsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const creditCards = parseInt(document.getElementById('editCreditCards').value);
+            const paidMemberships = parseInt(document.getElementById('editPaidMemberships').value);
+            
+            if (!adminUser || !currentEditUserId) {
+                document.getElementById('editCountsError').textContent = 'Invalid session';
+                return;
+            }
+            
+            try {
+                const response = await fetch(API_BASE + 'update_counts.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        admin_user_id: adminUser.id,
+                        target_user_id: currentEditUserId,
+                        credit_cards: creditCards,
+                        paid_memberships: paidMemberships
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    closeEditModal();
+                    loadPetData(); // Refresh the table
+                    alert('Counts updated successfully!');
+                } else {
+                    document.getElementById('editCountsError').textContent = data.error || 'Failed to update counts';
+                }
+            } catch (error) {
+                console.error('Update counts error:', error);
+                document.getElementById('editCountsError').textContent = 'Connection error. Please try again.';
+            }
+        });
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('editCountsModal');
+            if (e.target === modal) {
+                closeEditModal();
+            }
+        });
 
         // Auto-refresh every 30 seconds when dashboard is active
         setInterval(() => {
