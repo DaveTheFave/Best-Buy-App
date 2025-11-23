@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification Manager Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-left: 4px solid #0046be;
+        }
+        .pass {
+            border-left-color: #28a745;
+        }
+        .fail {
+            border-left-color: #dc3545;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #0046be;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #003a9e;
+        }
+        .status {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Notification Manager Test Suite</h1>
+    
+    <div class="test-section">
+        <h2>Manual Tests</h2>
+        <p>Current Time: <strong id="currentTime"></strong></p>
+        <p>Current Hour: <strong id="currentHour"></strong></p>
+        
+        <button onclick="runTests()">Run All Tests</button>
+        <button onclick="testBasicScheduling()">Test Basic Scheduling</button>
+        <button onclick="testAllowedHours()">Test Allowed Hours</button>
+        <button onclick="testSessionWindow()">Test Session Window</button>
+        <button onclick="clearResults()">Clear Results</button>
+        
+        <div id="testResults"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Live Notification Test</h2>
+        <button onclick="startTestNotifications()">Start Notifications (Test Mode)</button>
+        <button onclick="stopTestNotifications()">Stop Notifications</button>
+        <button onclick="showStatus()">Show Status</button>
+        
+        <div id="status" class="status"></div>
+    </div>
+
+    <script src="js/notifications.js"></script>
+    <script src="js/cookies.js"></script>
+    <script>
+        let testManager = null;
+
+        // Update current time display
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString();
+            document.getElementById('currentHour').textContent = now.getHours();
+        }, 1000);
+
+        function log(message, pass = true) {
+            const resultsDiv = document.getElementById('testResults');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${pass ? 'pass' : 'fail'}`;
+            resultDiv.textContent = `${pass ? '✅' : '❌'} ${message}`;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function clearResults() {
+            document.getElementById('testResults').innerHTML = '';
+            document.getElementById('status').innerHTML = '';
+        }
+
+        function testBasicScheduling() {
+            clearResults();
+            log('Testing basic scheduling logic...', true);
+            
+            const nm = new NotificationManager();
+            
+            // Test _isWithinAllowedHours
+            const morning9 = new Date();
+            morning9.setHours(9, 0, 0, 0);
+            const result1 = nm._isWithinAllowedHours(morning9);
+            log(`09:00 should be within allowed hours: ${result1}`, result1 === true);
+            
+            const evening21 = new Date();
+            evening21.setHours(21, 0, 0, 0);
+            const result2 = nm._isWithinAllowedHours(evening21);
+            log(`21:00 should be outside allowed hours: ${!result2}`, result2 === false);
+            
+            const afternoon15 = new Date();
+            afternoon15.setHours(15, 30, 0, 0);
+            const result3 = nm._isWithinAllowedHours(afternoon15);
+            log(`15:30 should be within allowed hours: ${result3}`, result3 === true);
+            
+            const earlyMorning6 = new Date();
+            earlyMorning6.setHours(6, 0, 0, 0);
+            const result4 = nm._isWithinAllowedHours(earlyMorning6);
+            log(`06:00 should be outside allowed hours: ${!result4}`, result4 === false);
+        }
+
+        function testAllowedHours() {
+            clearResults();
+            log('Testing allowed hours boundaries...', true);
+            
+            const nm = new NotificationManager({
+                allowedHours: { startHour: 9, endHour: 21 }
+            });
+            
+            // Test each hour of the day
+            const results = [];
+            for (let hour = 0; hour < 24; hour++) {
+                const testDate = new Date();
+                testDate.setHours(hour, 0, 0, 0);
+                const isAllowed = nm._isWithinAllowedHours(testDate);
+                const shouldBeAllowed = hour >= 9 && hour < 21;
+                
+                if (isAllowed === shouldBeAllowed) {
+                    results.push({ hour, pass: true });
+                } else {
+                    results.push({ hour, pass: false });
+                    log(`Hour ${hour}:00 - Expected: ${shouldBeAllowed}, Got: ${isAllowed}`, false);
+                }
+            }
+            
+            const passed = results.filter(r => r.pass).length;
+            log(`Allowed hours test: ${passed}/24 hours correct`, passed === 24);
+        }
+
+        function testSessionWindow() {
+            clearResults();
+            log('Testing session window logic...', true);
+            
+            const now = new Date();
+            const sessionStart = new Date(now.getTime() - 60 * 60 * 1000); // 1 hour ago
+            const sessionEnd = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours from now
+            
+            const nm = new NotificationManager();
+            nm.sessionStart = sessionStart;
+            nm.sessionEnd = sessionEnd;
+            
+            // Test current time (should be within session)
+            const result1 = nm._isWithinSession(now);
+            log(`Current time should be within session: ${result1}`, result1 === true);
+            
+            // Test past time (should be before session)
+            const pastTime = new Date(sessionStart.getTime() - 60 * 1000);
+            const result2 = nm._isWithinSession(pastTime);
+            log(`Past time should be before session: ${!result2}`, result2 === false);
+            
+            // Test future time (should be after session)
+            const futureTime = new Date(sessionEnd.getTime() + 60 * 1000);
+            const result3 = nm._isWithinSession(futureTime);
+            log(`Future time should be after session: ${!result3}`, result3 === false);
+        }
+
+        function testNextTopOfHour() {
+            clearResults();
+            log('Testing next top-of-hour calculation...', true);
+            
+            const nm = new NotificationManager({
+                allowedHours: { startHour: 9, endHour: 21 }
+            });
+            
+            // Test from various times during the day
+            const now = new Date();
+            now.setHours(10, 30, 0, 0); // 10:30 AM
+            
+            const sessionEnd = new Date(now);
+            sessionEnd.setHours(18, 0, 0, 0); // Session ends at 6 PM
+            
+            const msUntilNext = nm._msUntilNextTopOfHourWithinWindow(now, { startHour: 9, endHour: 21 }, sessionEnd);
+            
+            if (msUntilNext !== null) {
+                const minutes = Math.round(msUntilNext / 1000 / 60);
+                log(`Next notification in ${minutes} minutes (should be ~30 min)`, Math.abs(minutes - 30) < 2);
+            } else {
+                log('Failed to calculate next notification time', false);
+            }
+        }
+
+        function runTests() {
+            clearResults();
+            log('=== Running All Tests ===', true);
+            testBasicScheduling();
+            testAllowedHours();
+            testSessionWindow();
+            testNextTopOfHour();
+            log('=== Tests Complete ===', true);
+        }
+
+        function startTestNotifications() {
+            if (testManager) {
+                testManager.stop();
+            }
+            
+            const now = new Date();
+            const sessionEnd = new Date(now.getTime() + 4 * 60 * 60 * 1000); // 4 hours from now
+            
+            testManager = new NotificationManager({
+                title: '🧪 Test Notification',
+                message: 'This is a test notification at the top of the hour',
+                allowedHours: { startHour: 9, endHour: 21 },
+                useFallbackBanner: true,
+                onNotification: () => {
+                    log('Test notification triggered at ' + new Date().toLocaleTimeString(), true);
+                }
+            });
+            
+            testManager.start({
+                sessionStart: now.toISOString(),
+                sessionEnd: sessionEnd.toISOString()
+            });
+            
+            log('Test notifications started', true);
+            showStatus();
+        }
+
+        function stopTestNotifications() {
+            if (testManager) {
+                testManager.stop();
+                log('Test notifications stopped', true);
+                testManager = null;
+                showStatus();
+            }
+        }
+
+        function showStatus() {
+            const statusDiv = document.getElementById('status');
+            if (testManager) {
+                const status = testManager.getStatus();
+                statusDiv.innerHTML = `
+                    <strong>Notification Manager Status:</strong><br>
+                    Running: ${status.isRunning}<br>
+                    Session Start: ${status.sessionStart ? new Date(status.sessionStart).toLocaleString() : 'N/A'}<br>
+                    Session End: ${status.sessionEnd ? new Date(status.sessionEnd).toLocaleString() : 'N/A'}<br>
+                    Allowed Hours: ${status.allowedHours.startHour}:00 - ${status.allowedHours.endHour}:00<br>
+                    Active Timers: ${status.activeTimers}
+                `;
+            } else {
+                statusDiv.innerHTML = '<em>No active notification manager</em>';
+            }
+        }
+
+        // Run basic tests on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString();
+            document.getElementById('currentHour').textContent = now.getHours();
+        });
+    </script>
+</body>
+</html>

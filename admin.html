@@ -325,6 +325,67 @@
             display: block;
         }
 
+        /* Shift Time Input Styles */
+        .shift-time-group {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .shift-time-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .shift-time-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .shift-time-inputs input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 0.9em;
+            box-sizing: border-box;
+        }
+
+        .shift-time-inputs input:focus {
+            outline: none;
+            border-color: #0046be;
+        }
+
+        .session-controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-reset {
+            padding: 8px 16px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .btn-reset:hover {
+            background: #c82333;
+        }
+
+        .session-info {
+            margin-top: 10px;
+            font-size: 0.85em;
+            color: #666;
+        }
+
         /* Apps & Memberships Section */
         .apps-memberships-section {
             background: white;
@@ -485,6 +546,10 @@
     </style>
 </head>
 <body>
+    <!-- Include notification and session utilities -->
+    <script src="js/notifications.js"></script>
+    <script src="js/cookies.js"></script>
+
     <!-- Admin Login Screen -->
     <div id="adminLoginScreen">
         <div class="login-card">
@@ -494,6 +559,22 @@
                 <div class="form-group">
                     <label for="adminUsername">Username</label>
                     <input type="text" id="adminUsername" name="username" required placeholder="Enter admin username">
+                </div>
+                <div class="shift-time-group">
+                    <label>Shift Hours (Optional)</label>
+                    <div class="shift-time-inputs">
+                        <div>
+                            <label for="shiftStart" style="font-size: 0.85em; font-weight: normal;">Start Time</label>
+                            <input type="datetime-local" id="shiftStart" name="shiftStart">
+                        </div>
+                        <div>
+                            <label for="shiftEnd" style="font-size: 0.85em; font-weight: normal;">End Time</label>
+                            <input type="datetime-local" id="shiftEnd" name="shiftEnd">
+                        </div>
+                    </div>
+                    <div class="session-info">
+                        Leave blank to use default shift (now until 21:00 today)
+                    </div>
                 </div>
                 <button type="submit" class="btn-login">Login</button>
                 <div id="loginError" class="login-error"></div>
@@ -508,9 +589,12 @@
                 <h1>🎮 Admin Dashboard</h1>
                 <p>Monitor all employee pets and their health status</p>
                 <div class="header-controls">
-                    <div class="admin-info">Logged in as: <strong id="adminName"></strong></div>
-                    <div>
-                        <button class="reset-session-btn" onclick="resetSession()">🔄 Reset Session</button>
+                    <div class="admin-info">
+                        Logged in as: <strong id="adminName"></strong>
+                        <div class="session-info" id="sessionInfo" style="margin-top: 5px;"></div>
+                    </div>
+                    <div class="session-controls">
+                        <button class="btn-reset" onclick="resetSession()">Reset Session</button>
                         <button class="logout-btn" onclick="logout()">Logout</button>
                     </div>
                 </div>
@@ -584,28 +668,42 @@
 
     <script>
         let adminUser = null;
+        let adminSession = null;
+        let notificationManager = null;
         const API_BASE = 'api/';
         const APPS_STORAGE_KEY = 'admin_apps_memberships';
+        
+        // Configuration constants
+        // Note: DEFAULT_SHIFT_END_HOUR should match NotificationManager.DEFAULT_END_HOUR
+        // We declare it here to avoid tight coupling with the NotificationManager module
+        const DEFAULT_SHIFT_END_HOUR = 21; // Must match NotificationManager.DEFAULT_END_HOUR
 
         // Initialize apps & memberships from storage
         let appsMemberships = [];
 
-        // Try to restore session on page load
+        // Initialize on page load
         window.addEventListener('DOMContentLoaded', () => {
-            const savedSession = restoreSession();
-            if (savedSession && savedSession.is_admin) {
-                // Restore admin session
-                adminUser = savedSession;
-                document.getElementById('adminName').textContent = adminUser.name;
-                document.getElementById('adminLoginScreen').classList.add('hidden');
-                document.getElementById('adminDashboard').classList.add('active');
-                loadPetData();
+            // Try to restore session
+            const savedSession = SessionStorage.loadSession();
+            if (savedSession && savedSession.adminUser) {
+                // Check if session is still valid
+                const now = new Date();
+                const sessionEnd = new Date(savedSession.shiftEnd);
                 
-                // Load apps & memberships
-                loadAppsMemberships();
-                
-                // Check notification permission and start if granted
-                initializeNotifications();
+                if (now < sessionEnd) {
+                    // Restore session
+                    adminUser = savedSession.adminUser;
+                    adminSession = savedSession;
+                    document.getElementById('adminName').textContent = adminUser.name;
+                    document.getElementById('adminLoginScreen').classList.add('hidden');
+                    document.getElementById('adminDashboard').classList.add('active');
+                    updateSessionInfo();
+                    loadPetData();
+                    startNotifications();
+                } else {
+                    // Session expired
+                    SessionStorage.clearSession();
+                }
             }
         });
 
@@ -618,6 +716,31 @@
             if (!username) {
                 showLoginError('Please enter a username');
                 return;
+            }
+            
+            // Get shift times
+            let shiftStart = document.getElementById('shiftStart').value;
+            let shiftEnd = document.getElementById('shiftEnd').value;
+            
+            // Set defaults if not provided
+            const now = new Date();
+            if (!shiftStart) {
+                shiftStart = now.toISOString();
+            } else {
+                shiftStart = new Date(shiftStart).toISOString();
+            }
+            
+            if (!shiftEnd) {
+                // Default: end at configured hour today
+                const endTime = new Date();
+                endTime.setHours(DEFAULT_SHIFT_END_HOUR, 0, 0, 0);
+                // If end hour has passed, use tomorrow
+                if (now >= endTime) {
+                    endTime.setDate(endTime.getDate() + 1);
+                }
+                shiftEnd = endTime.toISOString();
+            } else {
+                shiftEnd = new Date(shiftEnd).toISOString();
             }
             
             try {
@@ -634,20 +757,22 @@
                 if (data.success) {
                     if (data.user.is_admin) {
                         adminUser = data.user;
+                        adminSession = {
+                            adminUser: adminUser,
+                            shiftStart: shiftStart,
+                            shiftEnd: shiftEnd,
+                            loginTime: now.toISOString()
+                        };
                         
-                        // Save session with cookie persistence
-                        saveSession(adminUser);
+                        // Save session
+                        SessionStorage.saveSession(adminSession);
                         
                         document.getElementById('adminName').textContent = adminUser.name;
                         document.getElementById('adminLoginScreen').classList.add('hidden');
                         document.getElementById('adminDashboard').classList.add('active');
+                        updateSessionInfo();
                         loadPetData();
-                        
-                        // Load apps & memberships
-                        loadAppsMemberships();
-                        
-                        // Initialize notifications
-                        initializeNotifications();
+                        startNotifications();
                     } else {
                         showLoginError('Access denied. Admin privileges required.');
                     }
@@ -660,6 +785,76 @@
             }
         });
 
+        function startNotifications() {
+            // Stop existing notifications if any
+            if (notificationManager) {
+                notificationManager.stop();
+            }
+
+            // Check if we're within session and allowed hours
+            const now = new Date();
+            const sessionEnd = new Date(adminSession.shiftEnd);
+            
+            if (now >= sessionEnd) {
+                console.log('Session already ended, not starting notifications');
+                return;
+            }
+
+            // Create notification manager
+            notificationManager = new NotificationManager({
+                title: '🐾 Pet Feeding Reminder',
+                message: 'Time to check on employee pets! Remember to remind employees to feed their pets.',
+                allowedHours: { startHour: 9, endHour: 21 },
+                useFallbackBanner: true,
+                onNotification: () => {
+                    console.log('Notification triggered at', new Date().toLocaleString());
+                    // Optionally refresh pet data when notification shows
+                    if (document.getElementById('adminDashboard').classList.contains('active')) {
+                        loadPetData();
+                    }
+                }
+            });
+
+            // Start with session information
+            notificationManager.start({
+                sessionStart: adminSession.shiftStart,
+                sessionEnd: adminSession.shiftEnd,
+                checkSessionActive: () => {
+                    const now = new Date();
+                    const end = new Date(adminSession.shiftEnd);
+                    return now < end;
+                }
+            });
+
+            console.log('Notifications started', notificationManager.getStatus());
+        }
+
+        function updateSessionInfo() {
+            if (adminSession) {
+                const start = new Date(adminSession.shiftStart);
+                const end = new Date(adminSession.shiftEnd);
+                const sessionInfo = document.getElementById('sessionInfo');
+                sessionInfo.textContent = `Shift: ${start.toLocaleTimeString()} - ${end.toLocaleTimeString()}`;
+            }
+        }
+
+        function resetSession() {
+            if (confirm('Are you sure you want to reset your session? This will stop all notifications.')) {
+                // Stop notifications
+                if (notificationManager) {
+                    notificationManager.stop();
+                    notificationManager = null;
+                }
+                
+                // Clear session
+                adminSession = null;
+                SessionStorage.clearSession();
+                
+                // Re-prompt for login
+                logout();
+            }
+        }
+
         function showLoginError(message) {
             const errorElement = document.getElementById('loginError');
             errorElement.textContent = message;
@@ -671,21 +866,19 @@
 
         function logout() {
             // Stop notifications
-            notificationManager.stopNotifications();
+            if (notificationManager) {
+                notificationManager.stop();
+                notificationManager = null;
+            }
             
             // Clear session
-            clearSession();
-            
             adminUser = null;
+            adminSession = null;
+            SessionStorage.clearSession();
+            
             document.getElementById('adminLoginForm').reset();
             document.getElementById('adminLoginScreen').classList.remove('hidden');
             document.getElementById('adminDashboard').classList.remove('active');
-        }
-
-        function resetSession() {
-            if (confirm('Are you sure you want to reset your session? This will log you out and clear all timers.')) {
-                logout();
-            }
         }
 
         async function loadPetData() {
