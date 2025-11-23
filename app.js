@@ -64,13 +64,88 @@ function updateAnimalEmoji(animalType) {
     document.getElementById('animalType').textContent = animalType.charAt(0).toUpperCase() + animalType.slice(1);
 }
 
-// Update stat bars
+// Calculate animal status based on health and happiness
+function getAnimalStatus(health, happiness) {
+    if (health <= 0) {
+        return { status: 'Dead', emoji: '💀', color: '#000000' };
+    } else if (health < 20 || happiness < 20) {
+        return { status: 'Critical', emoji: '😰', color: '#dc3545' };
+    } else if (health < 40 || happiness < 40) {
+        return { status: 'Sad', emoji: '😢', color: '#ff6b6b' };
+    } else if (health < 60 || happiness < 60) {
+        return { status: 'Okay', emoji: '😐', color: '#ffa500' };
+    } else if (health < 80 || happiness < 80) {
+        return { status: 'Good', emoji: '🙂', color: '#28a745' };
+    } else {
+        return { status: 'Happy', emoji: '😄', color: '#4caf50' };
+    }
+}
+
+// Update animation speed based on health and happiness
+function updateAnimationSpeed(health, happiness) {
+    const animalSprite = document.querySelector('.animal-sprite');
+    const animalEmoji = document.querySelector('.animal-emoji');
+    
+    if (!animalSprite || !animalEmoji) return;
+    
+    // Calculate average of health and happiness for overall vitality
+    const vitality = (health + happiness) / 2;
+    
+    // Animation speeds: faster when healthy/happy, slower when not
+    // Base speeds (in seconds)
+    const floatSpeedBase = 3; // Base float animation
+    const wiggleSpeedBase = 2; // Base wiggle animation
+    
+    // Calculate speed multiplier (slower = higher number, faster = lower number)
+    // When vitality is high (100), speed = 1x (normal)
+    // When vitality is low (0), speed = 5x (very slow)
+    let speedMultiplier;
+    if (health <= 0) {
+        // Dead - no animation
+        speedMultiplier = 999;
+    } else if (vitality >= 80) {
+        speedMultiplier = 0.8; // Fast
+    } else if (vitality >= 60) {
+        speedMultiplier = 1.2; // Normal-ish
+    } else if (vitality >= 40) {
+        speedMultiplier = 2.0; // Slower
+    } else if (vitality >= 20) {
+        speedMultiplier = 3.0; // Much slower
+    } else {
+        speedMultiplier = 5.0; // Very slow
+    }
+    
+    const floatSpeed = floatSpeedBase * speedMultiplier;
+    const wiggleSpeed = wiggleSpeedBase * speedMultiplier;
+    
+    if (health <= 0) {
+        // Stop animations when dead
+        animalSprite.style.animation = 'none';
+        animalEmoji.style.animation = 'none';
+    } else {
+        animalSprite.style.animation = `float ${floatSpeed}s ease-in-out infinite`;
+        animalEmoji.style.animation = `wiggle ${wiggleSpeed}s ease-in-out infinite`;
+    }
+}
+
+// Update stat bars with status display
 function updateStats(health, happiness) {
     document.getElementById('healthBar').style.setProperty('--health', health + '%');
     document.getElementById('healthValue').textContent = health;
     
     document.getElementById('happinessBar').style.setProperty('--happiness', happiness + '%');
     document.getElementById('happinessValue').textContent = happiness;
+    
+    // Update animal status display
+    const statusInfo = getAnimalStatus(health, happiness);
+    const statusElement = document.getElementById('animalStatus');
+    if (statusElement) {
+        statusElement.textContent = statusInfo.emoji + ' ' + statusInfo.status;
+        statusElement.style.color = statusInfo.color;
+    }
+    
+    // Update animation speed
+    updateAnimationSpeed(health, happiness);
 }
 
 // Login Form Handler

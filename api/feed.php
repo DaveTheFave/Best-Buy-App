@@ -105,11 +105,20 @@ if ($method === 'POST') {
     $result = $checkStmt->get_result();
     
     $goalMet = false;
+    $currentPM = 0;
+    $goalPM = 1;
+    $currentCC = 0;
+    $goalCC = 1;
+    
     if ($result->num_rows > 0) {
         $session = $result->fetch_assoc();
+        $currentPM = $session['current_paid_memberships'];
+        $goalPM = $session['goal_paid_memberships'];
+        $currentCC = $session['current_credit_cards'];
+        $goalCC = $session['goal_credit_cards'];
+        
         // Goal is met if they have both required memberships and credit cards
-        $goalMet = ($session['current_paid_memberships'] >= $session['goal_paid_memberships']) && 
-                   ($session['current_credit_cards'] >= $session['goal_credit_cards']);
+        $goalMet = ($currentPM >= $goalPM) && ($currentCC >= $goalCC);
         
         // Update goal_met status
         $updateGoalStmt = $conn->prepare("UPDATE work_sessions SET goal_met = ? WHERE user_id = ? AND session_date = ?");
@@ -130,59 +139,62 @@ if ($method === 'POST') {
         $updateGoalStmt->close();
     }
     
-    // Calculate health increase based on meeting goals
+    // Calculate health increase based on revenue (health is connected to revenue)
     $healthIncrease = 5; // Base for any sale
-    $happinessIncrease = 5;
     
-    // Small bonus for revenue (not weighted heavily)
+    // Revenue-based health bonus
     if ($revenue >= 100) {
         $healthIncrease += 5;
-        $happinessIncrease += 5;
+    }
+    if ($revenue >= 500) {
+        $healthIncrease += 5;
     }
     
     // Apply special bonuses
     $bonusMessage = '';
     
-    // Big bonus for Paid Membership (primary goal)
+    // Bonus for Paid Membership - affects health
     if ($hasPaidMembership) {
         $healthIncrease += 20;
-        $happinessIncrease += 25;
-        $bonusMessage = '⭐ EXCELLENT! Paid Membership! +20 Health, +25 Happiness!';
+        $bonusMessage = '⭐ EXCELLENT! Paid Membership! +20 Health!';
     }
     
-    // Big bonus for Credit Card (primary goal)
+    // Bonus for Credit Card - affects health
     if ($hasCreditCard) {
         $healthIncrease += 20;
-        $happinessIncrease += 25;
         if ($bonusMessage) {
-            $bonusMessage .= ' 💳 Plus Credit Card! +20 Health, +25 Happiness!';
+            $bonusMessage .= ' 💳 Plus Credit Card! +20 Health!';
         } else {
-            $bonusMessage = '💳 EXCELLENT! Credit Card! +20 Health, +25 Happiness!';
+            $bonusMessage = '💳 EXCELLENT! Credit Card! +20 Health!';
         }
     }
     
     // Extra bonus for the combo
     if ($hasCreditCard && $hasPaidMembership) {
         $healthIncrease += 10;
-        $happinessIncrease += 10;
-        $bonusMessage = '🎉 AMAZING COMBO! Credit Card + Paid Membership! Total: +50 Health, +60 Happiness!';
+        $bonusMessage = '🎉 AMAZING COMBO! Credit Card + Paid Membership! Total: +50 Health!';
     }
     
     // Bonus for Warranty
     if ($hasWarranty) {
         $healthIncrease += 10;
-        $happinessIncrease += 10;
         if ($bonusMessage) {
-            $bonusMessage .= ' 🛡️ Plus Warranty! +10 Health, +10 Happiness!';
+            $bonusMessage .= ' 🛡️ Plus Warranty! +10 Health!';
         } else {
-            $bonusMessage = '🛡️ Great job with the Warranty! +10 Health, +10 Happiness!';
+            $bonusMessage = '🛡️ Great job with the Warranty! +10 Health!';
         }
     }
     
-    // Update animal stats
+    // Calculate NEW happiness based ONLY on Credit Card and Paid Membership goal progress
+    // Happiness = 100 when goals met, 0 when none achieved, proportional in between
+    $pmProgress = ($goalPM > 0) ? min(100, ($currentPM / $goalPM) * 100) : 0;
+    $ccProgress = ($goalCC > 0) ? min(100, ($currentCC / $goalCC) * 100) : 0;
+    $newHappiness = round(($pmProgress + $ccProgress) / 2);
+    
+    // Update animal stats - set happiness to calculated value, add to health
     $animalStmt = $conn->prepare("UPDATE animal_stats 
                                    SET health = LEAST(100, health + ?), 
-                                       happiness = LEAST(100, happiness + ?),
+                                       happiness = ?,
                                        last_fed = NOW(),
                                        total_revenue = total_revenue + ?
                                    WHERE user_id = ?");
@@ -192,7 +204,7 @@ if ($method === 'POST') {
         $conn->close();
         exit;
     }
-    $animalStmt->bind_param("iidi", $healthIncrease, $happinessIncrease, $revenue, $userId);
+    $animalStmt->bind_param("iidi", $healthIncrease, $newHappiness, $revenue, $userId);
     
     if (!$animalStmt->execute()) {
         echo json_encode(['success' => false, 'error' => 'DB execute failed (update animal stats): ' . $animalStmt->error]);
