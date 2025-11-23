@@ -186,9 +186,10 @@ if ($method === 'POST') {
     }
     
     // Calculate NEW happiness based ONLY on Credit Card and Paid Membership goal progress
-    // Happiness = 100 when goals met, 0 when none achieved, proportional in between
-    $pmProgress = ($goalPM > 0) ? min(100, ($currentPM / $goalPM) * 100) : 0;
-    $ccProgress = ($goalCC > 0) ? min(100, ($currentCC / $goalCC) * 100) : 0;
+    // Happiness = 100 when goals met, proportional in between
+    // When goal is 0, consider it as "no requirement" = automatically met (100%)
+    $pmProgress = ($goalPM > 0) ? min(100, ($currentPM / $goalPM) * 100) : 100;
+    $ccProgress = ($goalCC > 0) ? min(100, ($currentCC / $goalCC) * 100) : 100;
     $newHappiness = round(($pmProgress + $ccProgress) / 2);
     
     // Update animal stats - set happiness to calculated value, add to health

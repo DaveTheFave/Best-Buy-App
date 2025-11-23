@@ -669,6 +669,7 @@
     </div>
 
     <!-- Import utility scripts -->
+    <script src="utils/animal-status.js"></script>
     <script src="utils/cookies.js"></script>
     <script src="utils/session.js"></script>
     <script src="js/notifications.js"></script>
@@ -939,21 +940,7 @@
             document.getElementById('avgHappiness').textContent = Math.round(summary.avg_happiness) + '%';
         }
 
-        function getAnimalStatus(health, happiness) {
-            if (health <= 0) {
-                return { status: 'Dead', emoji: '💀', color: '#000000' };
-            } else if (health < 20 || happiness < 20) {
-                return { status: 'Critical', emoji: '😰', color: '#dc3545' };
-            } else if (health < 40 || happiness < 40) {
-                return { status: 'Sad', emoji: '😢', color: '#ff6b6b' };
-            } else if (health < 60 || happiness < 60) {
-                return { status: 'Okay', emoji: '😐', color: '#ffa500' };
-            } else if (health < 80 || happiness < 80) {
-                return { status: 'Good', emoji: '🙂', color: '#28a745' };
-            } else {
-                return { status: 'Happy', emoji: '😄', color: '#4caf50' };
-            }
-        }
+        // getAnimalStatus function is now in utils/animal-status.js
 
         function renderTable(pets) {
             const emojiMap = {
@@ -1016,7 +1003,7 @@
                 html += `<td><span class="status-badge ${isActive}">${isActive === 'active' ? 'Active Today' : 'Inactive'}</span></td>`;
                 html += `<td style="text-align: center;">`;
                 if (isActive) {
-                    html += `<button class="btn-edit" onclick="openEditModal(${pet.id}, '${pet.name}', ${pet.current_credit_cards || 0}, ${pet.current_paid_memberships || 0})">Edit Counts</button>`;
+                    html += `<button class="btn-edit" data-user-id="${pet.id}" data-user-name="${pet.name.replace(/"/g, '&quot;')}" data-cc="${pet.current_credit_cards || 0}" data-pm="${pet.current_paid_memberships || 0}">Edit Counts</button>`;
                 } else {
                     html += '<span style="color: #999;">-</span>';
                 }
@@ -1026,6 +1013,17 @@
 
             html += '</tbody></table>';
             document.getElementById('tableContent').innerHTML = html;
+            
+            // Add click event listeners to edit buttons using data attributes
+            document.querySelectorAll('.btn-edit').forEach(button => {
+                button.addEventListener('click', function() {
+                    const userId = parseInt(this.getAttribute('data-user-id'));
+                    const userName = this.getAttribute('data-user-name');
+                    const cc = parseInt(this.getAttribute('data-cc'));
+                    const pm = parseInt(this.getAttribute('data-pm'));
+                    openEditModal(userId, userName, cc, pm);
+                });
+            });
         }
 
         function showError(message) {

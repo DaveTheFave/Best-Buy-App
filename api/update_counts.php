@@ -138,8 +138,9 @@ if ($method === 'POST') {
     $currentPM = $updatedSession['current_paid_memberships'];
     
     // Calculate NEW happiness based on goal progress
-    $pmProgress = ($goalPM > 0) ? min(100, ($currentPM / $goalPM) * 100) : 0;
-    $ccProgress = ($goalCC > 0) ? min(100, ($currentCC / $goalCC) * 100) : 0;
+    // When goal is 0, consider it as "no requirement" = automatically met (100%)
+    $pmProgress = ($goalPM > 0) ? min(100, ($currentPM / $goalPM) * 100) : 100;
+    $ccProgress = ($goalCC > 0) ? min(100, ($currentCC / $goalCC) * 100) : 100;
     $newHappiness = round(($pmProgress + $ccProgress) / 2);
     
     // Update animal happiness
