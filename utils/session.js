@@ -104,3 +104,14 @@ function clearSession() {
 function hasActiveSession() {
     return restoreSession() !== null;
 }
+
+/**
+ * SessionStorage API wrapper for backwards compatibility
+ * Used by admin.html which expects this interface
+ */
+const SessionStorage = {
+    saveSession: saveSession,
+    loadSession: restoreSession,
+    clearSession: clearSession,
+    hasActiveSession: hasActiveSession
+};
