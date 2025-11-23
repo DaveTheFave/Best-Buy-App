@@ -13,6 +13,65 @@ if ($method === 'POST') {
     
     $username = $data['username'];
     $conn = getDBConnection();
+    
+    // ============================================
+    // Auto-reset at 8am daily check
+    // ============================================
+    // Check if we need to do an automatic 8am reset
+    $currentHour = (int)date('G'); // 0-23 hour format
+    $today = date('Y-m-d');
+    
+    // Create a marker table to track last reset if it doesn't exist
+    $conn->query("CREATE TABLE IF NOT EXISTS daily_reset_marker (
+        id INT PRIMARY KEY DEFAULT 1,
+        last_reset_date DATE NOT NULL,
+        last_reset_time DATETIME NOT NULL
+    )");
+    
+    // Check when the last reset was performed
+    $markerResult = $conn->query("SELECT last_reset_date FROM daily_reset_marker WHERE id = 1");
+    $shouldReset = false;
+    
+    if ($markerResult && $markerResult->num_rows > 0) {
+        $marker = $markerResult->fetch_assoc();
+        $lastResetDate = $marker['last_reset_date'];
+        
+        // Reset if it's a new day and current time is 8am or later
+        if ($lastResetDate < $today && $currentHour >= 8) {
+            $shouldReset = true;
+        }
+    } else {
+        // No marker exists yet, create one if it's 8am or later
+        if ($currentHour >= 8) {
+            $shouldReset = true;
+        }
+    }
+    
+    // Perform the auto-reset if needed
+    if ($shouldReset) {
+        $conn->begin_transaction();
+        try {
+            // Reset all employee stats
+            $conn->query("UPDATE animal_stats SET health = 100, happiness = 0, last_fed = NOW(), last_health_reset = '$today'");
+            
+            // Delete today's work sessions
+            $conn->query("DELETE FROM work_sessions WHERE session_date = '$today'");
+            
+            // Delete today's sales records
+            $conn->query("DELETE FROM sales WHERE session_date = '$today'");
+            
+            // Update the reset marker
+            $conn->query("INSERT INTO daily_reset_marker (id, last_reset_date, last_reset_time) 
+                         VALUES (1, '$today', NOW()) 
+                         ON DUPLICATE KEY UPDATE last_reset_date = '$today', last_reset_time = NOW()");
+            
+            $conn->commit();
+        } catch (Exception $e) {
+            $conn->rollback();
+            // Log error but continue with login
+            error_log("Auto-reset failed: " . $e->getMessage());
+        }
+    }
 
     // Check if user exists. Also select the animal_stats.id so we can detect if stats exist.
     $stmt = $conn->prepare("SELECT u.id, u.username, u.name, u.animal_choice, u.is_admin,
