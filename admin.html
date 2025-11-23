@@ -581,6 +581,7 @@
                         <div class="session-info" id="sessionInfo" style="margin-top: 5px;"></div>
                     </div>
                     <div class="session-controls">
+                        <button class="btn-reset" onclick="resetWorkday()" style="background: #ff6b6b;">Reset Workday</button>
                         <button class="btn-reset" onclick="resetSession()">Reset Session</button>
                         <button class="logout-btn" onclick="logout()">Logout</button>
                     </div>
@@ -1111,6 +1112,56 @@
         // ============================================
         // Notification Management Functions
         // ============================================
+        
+        // ============================================
+        // Reset Workday Function
+        // ============================================
+        
+        async function resetWorkday() {
+            const confirmMessage = `Are you sure you want to reset the workday for ALL employees?
+
+This will:
+- Reset all health to 100%
+- Reset all happiness to 0%
+- Clear all today's sales data
+- Delete all today's work sessions
+
+This action cannot be undone!`;
+            
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+            
+            if (!adminUser) {
+                alert('You must be logged in as an admin to reset the workday.');
+                return;
+            }
+            
+            try {
+                const response = await fetch(API_BASE + 'reset_workday.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        admin_user_id: adminUser.id
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Workday reset successfully! All employee stats have been reset.');
+                    // Refresh the pet data to show updated stats
+                    loadPetData();
+                } else {
+                    alert('Failed to reset workday: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Reset workday error:', error);
+                alert('Connection error. Please check if the server is running.');
+            }
+        }
         
         function initializeNotifications() {
             // Check if notifications are already granted

@@ -13,6 +13,104 @@ if ($method === 'POST') {
     
     $username = $data['username'];
     $conn = getDBConnection();
+    
+    // ============================================
+    // Auto-reset at 8am daily check
+    // ============================================
+    // Check if we need to do an automatic 8am reset
+    $currentHour = (int)date('G'); // 0-23 hour format
+    $today = date('Y-m-d');
+    
+    // Check when the last reset was performed
+    // Note: The daily_reset_marker table should be created via migration_workday_reset.sql
+    $markerStmt = $conn->prepare("SELECT last_reset_date FROM daily_reset_marker WHERE id = ?");
+    $markerId = 1;
+    if ($markerStmt) {
+        $markerStmt->bind_param("i", $markerId);
+        $markerStmt->execute();
+        $markerResult = $markerStmt->get_result();
+    } else {
+        $markerResult = false;
+    }
+    $shouldReset = false;
+    
+    if ($markerResult && $markerResult->num_rows > 0) {
+        $marker = $markerResult->fetch_assoc();
+        $lastResetDate = $marker['last_reset_date'];
+        
+        // Reset if it's a new day and current time is 8am or later
+        if ($lastResetDate < $today && $currentHour >= 8) {
+            $shouldReset = true;
+        }
+    } else {
+        // No marker exists yet, create one if it's 8am or later
+        if ($currentHour >= 8) {
+            $shouldReset = true;
+        }
+    }
+    
+    // Close the marker statement
+    if ($markerStmt) {
+        $markerStmt->close();
+    }
+    
+    // Perform the auto-reset if needed
+    if ($shouldReset) {
+        $conn->begin_transaction();
+        try {
+            // Reset all employee stats using prepared statement
+            $resetStatsStmt = $conn->prepare("UPDATE animal_stats SET health = 100, happiness = 0, last_fed = NOW(), last_health_reset = ?");
+            if (!$resetStatsStmt) {
+                throw new Exception('Failed to prepare reset stats statement: ' . $conn->error);
+            }
+            $resetStatsStmt->bind_param("s", $today);
+            if (!$resetStatsStmt->execute()) {
+                throw new Exception('Failed to execute reset stats: ' . $resetStatsStmt->error);
+            }
+            $resetStatsStmt->close();
+            
+            // Delete today's work sessions using prepared statement
+            $deleteSessionsStmt = $conn->prepare("DELETE FROM work_sessions WHERE session_date = ?");
+            if (!$deleteSessionsStmt) {
+                throw new Exception('Failed to prepare delete sessions statement: ' . $conn->error);
+            }
+            $deleteSessionsStmt->bind_param("s", $today);
+            if (!$deleteSessionsStmt->execute()) {
+                throw new Exception('Failed to execute delete sessions: ' . $deleteSessionsStmt->error);
+            }
+            $deleteSessionsStmt->close();
+            
+            // Delete today's sales records using prepared statement
+            $deleteSalesStmt = $conn->prepare("DELETE FROM sales WHERE session_date = ?");
+            if (!$deleteSalesStmt) {
+                throw new Exception('Failed to prepare delete sales statement: ' . $conn->error);
+            }
+            $deleteSalesStmt->bind_param("s", $today);
+            if (!$deleteSalesStmt->execute()) {
+                throw new Exception('Failed to execute delete sales: ' . $deleteSalesStmt->error);
+            }
+            $deleteSalesStmt->close();
+            
+            // Update the reset marker using prepared statement
+            $updateMarkerStmt = $conn->prepare("INSERT INTO daily_reset_marker (id, last_reset_date, last_reset_time) 
+                         VALUES (1, ?, NOW()) 
+                         ON DUPLICATE KEY UPDATE last_reset_date = ?, last_reset_time = NOW()");
+            if (!$updateMarkerStmt) {
+                throw new Exception('Failed to prepare update marker statement: ' . $conn->error);
+            }
+            $updateMarkerStmt->bind_param("ss", $today, $today);
+            if (!$updateMarkerStmt->execute()) {
+                throw new Exception('Failed to execute update marker: ' . $updateMarkerStmt->error);
+            }
+            $updateMarkerStmt->close();
+            
+            $conn->commit();
+        } catch (Exception $e) {
+            $conn->rollback();
+            // Log error but continue with login
+            error_log("Auto-reset failed: " . $e->getMessage());
+        }
+    }
 
     // Check if user exists. Also select the animal_stats.id so we can detect if stats exist.
     $stmt = $conn->prepare("SELECT u.id, u.username, u.name, u.animal_choice, u.is_admin,

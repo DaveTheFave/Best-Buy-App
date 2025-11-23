@@ -108,8 +108,11 @@ Administrators can access the admin dashboard at `/admin.html` to:
 - Manage apps and memberships
 - Receive hourly pet-feeding notifications
 - Reset session and clear all data
+- **Reset workday for all employees** (manual button)
 
 **New Admin Features:**
+- **Reset Workday Button**: Manually reset all employees' stats to start fresh (health: 100%, happiness: 0%)
+- **Automatic 8am Reset**: All employee stats automatically reset at 8am daily
 - **Session Reset Button**: Clear cookies, timers, and log out instantly
 - **Cookie Persistence**: Stay logged in for 7 days across browser restarts
 - **Hourly Notifications**: Get reminders to feed pets (with in-app fallback)
@@ -190,12 +193,16 @@ mysql -u root -p bestbuy_tamagotchi < migration_daily_reset.sql
 
 # For high-value override tracking
 mysql -u root -p bestbuy_tamagotchi < migration_high_value_override.sql
+
+# For workday reset feature (automatic 8am reset)
+mysql -u root -p bestbuy_tamagotchi < migration_workday_reset.sql
 ```
 
 These migrations will add:
 - The `last_health_reset` column for daily health reset tracking
 - The `is_admin` column for admin authentication
 - The `overridden_high_value` column for tracking high-value revenue overrides
+- The `daily_reset_marker` table for tracking automatic 8am workday resets
 
 **After migration, manually grant admin access to authorized users:**
 ```sql
