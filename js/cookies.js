@@ -23,6 +23,11 @@ const SessionStorage = {
             };
             localStorage.setItem('adminSession', JSON.stringify(sessionData));
             console.log('Session saved to localStorage', sessionData);
+            
+            // Development warning
+            if (typeof console !== 'undefined') {
+                console.warn('⚠️ SECURITY NOTICE: Using client-side session storage. Not suitable for production!');
+            }
         } catch (error) {
             console.error('Error saving session:', error);
         }

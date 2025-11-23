@@ -402,7 +402,7 @@
                     <input type="text" id="adminUsername" name="username" required placeholder="Enter admin username">
                 </div>
                 <div class="shift-time-group">
-                    <label>Shift Hours (Optional - for notification testing)</label>
+                    <label>Shift Hours (Optional)</label>
                     <div class="shift-time-inputs">
                         <div>
                             <label for="shiftStart" style="font-size: 0.85em; font-weight: normal;">Start Time</label>
@@ -478,6 +478,9 @@
         let adminSession = null;
         let notificationManager = null;
         const API_BASE = 'api/';
+        
+        // Configuration constants
+        const DEFAULT_SHIFT_END_HOUR = 21; // Must match NotificationManager.DEFAULT_END_HOUR
 
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', () => {
@@ -529,10 +532,10 @@
             }
             
             if (!shiftEnd) {
-                // Default: end at 21:00 today
+                // Default: end at configured hour today
                 const endTime = new Date();
-                endTime.setHours(21, 0, 0, 0);
-                // If 21:00 has passed, use tomorrow
+                endTime.setHours(DEFAULT_SHIFT_END_HOUR, 0, 0, 0);
+                // If end hour has passed, use tomorrow
                 if (now >= endTime) {
                     endTime.setDate(endTime.getDate() + 1);
                 }

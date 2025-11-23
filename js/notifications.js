@@ -8,12 +8,25 @@
  * - Supports both browser notifications and fallback banner notifications
  */
 class NotificationManager {
+    // Constants
+    static DEFAULT_START_HOUR = 9;
+    static DEFAULT_END_HOUR = 21;
+    static BANNER_AUTO_HIDE_MS = 5000;
+    static BANNER_ANIMATION_MS = 300;
+    static MS_PER_SECOND = 1000;
+    static MS_PER_MINUTE = 60000;
+    static MS_PER_HOUR = 3600000;
+    static HOURS_PER_DAY = 24;
+
     constructor(options = {}) {
         this.options = {
             title: options.title || 'Pet Feeding Reminder',
             message: options.message || 'Time to check on your pet!',
             icon: options.icon || null,
-            allowedHours: options.allowedHours || { startHour: 9, endHour: 21 },
+            allowedHours: options.allowedHours || { 
+                startHour: NotificationManager.DEFAULT_START_HOUR, 
+                endHour: NotificationManager.DEFAULT_END_HOUR 
+            },
             useFallbackBanner: options.useFallbackBanner !== false,
             onNotification: options.onNotification || null
         };
@@ -208,20 +221,20 @@ class NotificationManager {
         `;
         banner.style.display = 'block';
 
-        // Auto-hide after 5 seconds
+        // Auto-hide after configured time
         setTimeout(() => {
             banner.style.animation = 'slideOut 0.3s ease-in';
             setTimeout(() => {
                 banner.style.display = 'none';
-            }, 300);
-        }, 5000);
+            }, NotificationManager.BANNER_ANIMATION_MS);
+        }, NotificationManager.BANNER_AUTO_HIDE_MS);
 
         // Click to dismiss
         banner.onclick = () => {
             banner.style.animation = 'slideOut 0.3s ease-in';
             setTimeout(() => {
                 banner.style.display = 'none';
-            }, 300);
+            }, NotificationManager.BANNER_ANIMATION_MS);
         };
     }
 
@@ -279,13 +292,14 @@ class NotificationManager {
         const currentMs = date.getMilliseconds();
 
         // Calculate ms to next top of hour
-        const msToNextHour = (60 - currentMinute) * 60 * 1000 - currentSecond * 1000 - currentMs;
+        const msToNextHour = (60 - currentMinute) * NotificationManager.MS_PER_MINUTE - 
+                            currentSecond * NotificationManager.MS_PER_SECOND - currentMs;
         
         // Start checking from the next top of hour
         let checkDate = new Date(now + msToNextHour);
         
         // Try up to 24 hours ahead to find a valid slot
-        for (let i = 0; i < 24; i++) {
+        for (let i = 0; i < NotificationManager.HOURS_PER_DAY; i++) {
             const checkHour = checkDate.getHours();
             const checkTime = checkDate.getTime();
 
@@ -301,7 +315,7 @@ class NotificationManager {
             }
 
             // Move to next hour
-            checkDate = new Date(checkDate.getTime() + 60 * 60 * 1000);
+            checkDate = new Date(checkDate.getTime() + NotificationManager.MS_PER_HOUR);
         }
 
         // No valid time found within 24 hours
