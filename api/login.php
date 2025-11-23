@@ -13,9 +13,10 @@ if ($method === 'POST') {
     
     $username = $data['username'];
     $conn = getDBConnection();
-    
-    // Check if user exists
+
+    // Check if user exists. Also select the animal_stats.id so we can detect if stats exist.
     $stmt = $conn->prepare("SELECT u.id, u.username, u.name, u.animal_choice, 
+                            a.id AS stat_id,
                             COALESCE(a.health, 100) as health, 
                             COALESCE(a.happiness, 100) as happiness,
                             COALESCE(a.last_fed, NOW()) as last_fed,
@@ -23,8 +24,21 @@ if ($method === 'POST') {
                             FROM users u
                             LEFT JOIN animal_stats a ON u.id = a.user_id
                             WHERE u.username = ?");
+
+    if (!$stmt) {
+        echo json_encode(['success' => false, 'error' => 'DB prepare failed: ' . $conn->error]);
+        $conn->close();
+        exit;
+    }
+
     $stmt->bind_param("s", $username);
-    $stmt->execute();
+    if (!$stmt->execute()) {
+        echo json_encode(['success' => false, 'error' => 'DB execute failed: ' . $stmt->error]);
+        $stmt->close();
+        $conn->close();
+        exit;
+    }
+
     $result = $stmt->get_result();
     
     if ($result->num_rows > 0) {
@@ -39,17 +53,41 @@ if ($method === 'POST') {
         $healthDecrease = min($user['health'], floor($hoursSinceLastFed * 5));
         $currentHealth = max(0, $user['health'] - $healthDecrease);
         
-        // Update animal stats if they exist
-        if ($user['health'] !== null) {
+        // Update animal stats if they exist (detect via stat_id), otherwise create them
+        if (!empty($user['stat_id'])) {
             $updateStmt = $conn->prepare("UPDATE animal_stats SET health = ? WHERE user_id = ?");
+            if (!$updateStmt) {
+                echo json_encode(['success' => false, 'error' => 'DB prepare failed (update): ' . $conn->error]);
+                $stmt->close();
+                $conn->close();
+                exit;
+            }
             $updateStmt->bind_param("ii", $currentHealth, $user['id']);
-            $updateStmt->execute();
+            if (!$updateStmt->execute()) {
+                echo json_encode(['success' => false, 'error' => 'DB execute failed (update): ' . $updateStmt->error]);
+                $updateStmt->close();
+                $stmt->close();
+                $conn->close();
+                exit;
+            }
             $updateStmt->close();
         } else {
             // Create animal stats if they don't exist
             $insertStmt = $conn->prepare("INSERT INTO animal_stats (user_id, health, happiness) VALUES (?, ?, 100)");
+            if (!$insertStmt) {
+                echo json_encode(['success' => false, 'error' => 'DB prepare failed (insert): ' . $conn->error]);
+                $stmt->close();
+                $conn->close();
+                exit;
+            }
             $insertStmt->bind_param("ii", $user['id'], $currentHealth);
-            $insertStmt->execute();
+            if (!$insertStmt->execute()) {
+                echo json_encode(['success' => false, 'error' => 'DB execute failed (insert): ' . $insertStmt->error]);
+                $insertStmt->close();
+                $stmt->close();
+                $conn->close();
+                exit;
+            }
             $insertStmt->close();
         }
         

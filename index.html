@@ -63,6 +63,7 @@
                         <div class="animal-emoji">🐱</div>
                     </div>
                     <div class="animal-name"><span id="animalType">Cat</span></div>
+                    <button id="changePetBtn" class="btn btn-secondary" style="margin-top: 10px;">Change Pet</button>
                 </div>
                 
                 <!-- Stats Bars -->
@@ -91,6 +92,14 @@
                     <div class="goal-item">
                         <span class="goal-label">Work Hours:</span>
                         <span class="goal-value" id="goalWorkHours">-</span>
+                    </div>
+                    <div class="goal-item">
+                        <span class="goal-label">⭐ Paid Memberships:</span>
+                        <span class="goal-value" id="goalPaidMemberships">0 / 0</span>
+                    </div>
+                    <div class="goal-item">
+                        <span class="goal-label">💳 Credit Cards:</span>
+                        <span class="goal-value" id="goalCreditCards">0 / 0</span>
                     </div>
                     <div class="goal-item">
                         <span class="goal-label">Revenue Goal:</span>
@@ -134,15 +143,51 @@
                         </label>
                     </div>
                     <div class="bonus-info">
-                        <p><strong>💡 Bonus Tips:</strong></p>
-                        <p>✨ Credit Card + Paid Membership = +35 bonus points!</p>
-                        <p>🛡️ Warranty = +20 bonus points!</p>
+                        <p><strong>💡 Performance Goals:</strong></p>
+                        <p>⭐ Paid Membership = +20 Health, +25 Happiness!</p>
+                        <p>💳 Credit Card = +20 Health, +25 Happiness!</p>
+                        <p>⭐+💳 Both together = Extra +10 Health, +10 Happiness!</p>
+                        <p>🛡️ Warranty = +10 Health, +10 Happiness!</p>
                     </div>
                     <button type="submit" class="btn btn-success">Feed Animal</button>
                 </form>
                 <div id="feedMessage" class="success-message"></div>
                 <div id="feedError" class="error-message"></div>
             </div>
+        </div>
+    </div>
+
+    <!-- Pet Selection Modal -->
+    <div id="petModal" class="modal">
+        <div class="modal-content">
+            <h2>Choose Your Pet</h2>
+            <div class="pet-grid">
+                <button class="pet-option" data-pet="cat">
+                    <span class="pet-emoji">🐱</span>
+                    <span class="pet-name">Cat</span>
+                </button>
+                <button class="pet-option" data-pet="dog">
+                    <span class="pet-emoji">🐶</span>
+                    <span class="pet-name">Dog</span>
+                </button>
+                <button class="pet-option" data-pet="bird">
+                    <span class="pet-emoji">🐦</span>
+                    <span class="pet-name">Bird</span>
+                </button>
+                <button class="pet-option" data-pet="rabbit">
+                    <span class="pet-emoji">🐰</span>
+                    <span class="pet-name">Rabbit</span>
+                </button>
+                <button class="pet-option" data-pet="hamster">
+                    <span class="pet-emoji">🐹</span>
+                    <span class="pet-name">Hamster</span>
+                </button>
+                <button class="pet-option" data-pet="fish">
+                    <span class="pet-emoji">🐠</span>
+                    <span class="pet-name">Fish</span>
+                </button>
+            </div>
+            <button id="closePetModal" class="btn btn-secondary" style="margin-top: 15px;">Cancel</button>
         </div>
     </div>
 

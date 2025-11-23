@@ -150,7 +150,11 @@ document.getElementById('workHoursForm').addEventListener('submit', async (e) =>
             currentSession = {
                 work_hours: data.work_hours,
                 goal_amount: data.goal_amount,
+                goal_paid_memberships: data.goal_paid_memberships,
+                goal_credit_cards: data.goal_credit_cards,
                 revenue: 0,
+                current_paid_memberships: 0,
+                current_credit_cards: 0,
                 goal_met: false
             };
             loadGameScreen();
@@ -205,14 +209,28 @@ function updateGoalsDisplay() {
         document.getElementById('goalAmount').textContent = formatCurrency(currentSession.goal_amount);
         document.getElementById('currentRevenue').textContent = formatCurrency(currentSession.revenue || 0);
         
+        // Update Paid Memberships goal
+        const currentPM = currentSession.current_paid_memberships || 0;
+        const goalPM = currentSession.goal_paid_memberships || 0;
+        document.getElementById('goalPaidMemberships').textContent = `${currentPM} / ${goalPM}`;
+        
+        // Update Credit Cards goal
+        const currentCC = currentSession.current_credit_cards || 0;
+        const goalCC = currentSession.goal_credit_cards || 0;
+        document.getElementById('goalCreditCards').textContent = `${currentCC} / ${goalCC}`;
+        
         const goalStatus = document.getElementById('goalStatus');
-        if (currentSession.goal_met || (currentSession.revenue >= currentSession.goal_amount)) {
+        if (currentSession.goal_met || (currentPM >= goalPM && currentCC >= goalCC)) {
             goalStatus.className = 'goal-status met';
             goalStatus.innerHTML = '<span class="status-text">🎉 Goal Achieved! Great job!</span>';
         } else {
             goalStatus.className = 'goal-status not-met';
-            const remaining = currentSession.goal_amount - (currentSession.revenue || 0);
-            goalStatus.innerHTML = `<span class="status-text">Goal not yet achieved. ${formatCurrency(remaining)} remaining</span>`;
+            const remainingPM = Math.max(0, goalPM - currentPM);
+            const remainingCC = Math.max(0, goalCC - currentCC);
+            let statusText = 'Keep going! Need: ';
+            if (remainingPM > 0) statusText += `${remainingPM} Paid Membership${remainingPM > 1 ? 's' : ''} `;
+            if (remainingCC > 0) statusText += `${remainingCC} Credit Card${remainingCC > 1 ? 's' : ''}`;
+            goalStatus.innerHTML = `<span class="status-text">${statusText}</span>`;
         }
     }
 }
@@ -253,8 +271,10 @@ document.getElementById('feedForm').addEventListener('submit', async (e) => {
             updateStats(data.health, data.happiness);
             document.getElementById('totalRevenue').textContent = formatCurrency(data.total_revenue);
             
-            // Update current session revenue
+            // Update current session revenue and counters
             currentSession.revenue = (currentSession.revenue || 0) + revenue;
+            if (hasCreditCard) currentSession.current_credit_cards = (currentSession.current_credit_cards || 0) + 1;
+            if (hasPaidMembership) currentSession.current_paid_memberships = (currentSession.current_paid_memberships || 0) + 1;
             currentSession.goal_met = data.goal_met;
             updateGoalsDisplay();
             
@@ -288,6 +308,63 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
     document.getElementById('workHoursForm').reset();
     document.getElementById('feedForm').reset();
     showScreen('loginScreen');
+});
+
+// Pet Selection Modal Handlers
+document.getElementById('changePetBtn').addEventListener('click', () => {
+    document.getElementById('petModal').style.display = 'flex';
+});
+
+document.getElementById('closePetModal').addEventListener('click', () => {
+    document.getElementById('petModal').style.display = 'none';
+});
+
+// Handle pet selection
+document.querySelectorAll('.pet-option').forEach(button => {
+    button.addEventListener('click', async () => {
+        const petType = button.getAttribute('data-pet');
+        
+        try {
+            const response = await fetch(API_BASE + 'change_pet.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_id: currentUser.id,
+                    animal_choice: petType
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                currentUser.animal_choice = petType;
+                updateAnimalEmoji(petType);
+                document.getElementById('petModal').style.display = 'none';
+                
+                // Show success message briefly
+                const animalSprite = document.querySelector('.animal-sprite');
+                animalSprite.style.animation = 'none';
+                setTimeout(() => {
+                    animalSprite.style.animation = 'float 3s ease-in-out infinite';
+                }, 10);
+            } else {
+                alert('Failed to change pet. Please try again.');
+            }
+        } catch (error) {
+            console.error('Change pet error:', error);
+            alert('Connection error. Please try again.');
+        }
+    });
+});
+
+// Close modal when clicking outside
+window.addEventListener('click', (e) => {
+    const modal = document.getElementById('petModal');
+    if (e.target === modal) {
+        modal.style.display = 'none';
+    }
 });
 
 // Auto-refresh stats every 30 seconds

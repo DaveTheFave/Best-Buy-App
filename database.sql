@@ -31,6 +31,10 @@ CREATE TABLE IF NOT EXISTS work_sessions (
     session_date DATE NOT NULL,
     revenue DECIMAL(10, 2) DEFAULT 0.00,
     goal_amount DECIMAL(10, 2) NOT NULL,
+    goal_paid_memberships INT DEFAULT 0,
+    goal_credit_cards INT DEFAULT 0,
+    current_paid_memberships INT DEFAULT 0,
+    current_credit_cards INT DEFAULT 0,
     goal_met BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

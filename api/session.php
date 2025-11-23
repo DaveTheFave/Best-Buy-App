@@ -15,37 +15,70 @@ if ($method === 'POST') {
     $workHours = $data['work_hours'];
     $sessionDate = date('Y-m-d');
     
-    // Calculate goal based on work hours ($1000 per hour)
+    // Calculate goals: 1 Paid Membership per 4 hours, 1 Credit Card per 7 hours
+    $goalPaidMemberships = ceil($workHours / 4);
+    $goalCreditCards = ceil($workHours / 7);
+    // Revenue goal is secondary (per-hour target)
+    // Adjusted multiplier: $1000 per hour (e.g., 8 hours => $8,000)
     $goalAmount = $workHours * 1000;
     
     $conn = getDBConnection();
-    
+
     // Check if session already exists for today
     $checkStmt = $conn->prepare("SELECT id FROM work_sessions WHERE user_id = ? AND session_date = ?");
+    if (!$checkStmt) {
+        echo json_encode(['success' => false, 'error' => 'DB prepare failed (check session): ' . $conn->error]);
+        $conn->close();
+        exit;
+    }
     $checkStmt->bind_param("is", $userId, $sessionDate);
-    $checkStmt->execute();
+    if (!$checkStmt->execute()) {
+        echo json_encode(['success' => false, 'error' => 'DB execute failed (check session): ' . $checkStmt->error]);
+        $checkStmt->close();
+        $conn->close();
+        exit;
+    }
     $result = $checkStmt->get_result();
     
     if ($result->num_rows > 0) {
         // Update existing session
-        $stmt = $conn->prepare("UPDATE work_sessions SET work_hours = ?, goal_amount = ? WHERE user_id = ? AND session_date = ?");
-        $stmt->bind_param("ddis", $workHours, $goalAmount, $userId, $sessionDate);
+        $stmt = $conn->prepare("UPDATE work_sessions SET work_hours = ?, goal_amount = ?, goal_paid_memberships = ?, goal_credit_cards = ? WHERE user_id = ? AND session_date = ?");
+        if (!$stmt) {
+            echo json_encode(['success' => false, 'error' => 'DB prepare failed (update session): ' . $conn->error]);
+            $checkStmt->close();
+            $conn->close();
+            exit;
+        }
+        $stmt->bind_param("ddiiis", $workHours, $goalAmount, $goalPaidMemberships, $goalCreditCards, $userId, $sessionDate);
     } else {
         // Create new session
-        $stmt = $conn->prepare("INSERT INTO work_sessions (user_id, work_hours, session_date, goal_amount) VALUES (?, ?, ?, ?)");
-        $stmt->bind_param("idsd", $userId, $workHours, $sessionDate, $goalAmount);
+        $stmt = $conn->prepare("INSERT INTO work_sessions (user_id, work_hours, session_date, goal_amount, goal_paid_memberships, goal_credit_cards) VALUES (?, ?, ?, ?, ?, ?)");
+        if (!$stmt) {
+            echo json_encode(['success' => false, 'error' => 'DB prepare failed (insert session): ' . $conn->error]);
+            $checkStmt->close();
+            $conn->close();
+            exit;
+        }
+        // types: i (user_id), d (work_hours), s (session_date), d (goal_amount), i (goal_paid_memberships), i (goal_credit_cards)
+        $stmt->bind_param("idsdii", $userId, $workHours, $sessionDate, $goalAmount, $goalPaidMemberships, $goalCreditCards);
     }
     
-    if ($stmt->execute()) {
-        echo json_encode([
-            'success' => true,
-            'goal_amount' => $goalAmount,
-            'work_hours' => $workHours,
-            'message' => 'Work session created successfully'
-        ]);
-    } else {
-        echo json_encode(['success' => false, 'error' => 'Failed to create work session']);
+    if (!$stmt->execute()) {
+        echo json_encode(['success' => false, 'error' => 'DB execute failed (create/update session): ' . $stmt->error]);
+        $stmt->close();
+        $checkStmt->close();
+        $conn->close();
+        exit;
     }
+
+    echo json_encode([
+        'success' => true,
+        'goal_amount' => $goalAmount,
+        'work_hours' => $workHours,
+        'goal_paid_memberships' => $goalPaidMemberships,
+        'goal_credit_cards' => $goalCreditCards,
+        'message' => 'Work session created successfully'
+    ]);
     
     $checkStmt->close();
     $stmt->close();
@@ -61,8 +94,18 @@ if ($method === 'POST') {
     
     $conn = getDBConnection();
     $stmt = $conn->prepare("SELECT * FROM work_sessions WHERE user_id = ? AND session_date = ?");
+    if (!$stmt) {
+        echo json_encode(['success' => false, 'error' => 'DB prepare failed (get session): ' . $conn->error]);
+        $conn->close();
+        exit;
+    }
     $stmt->bind_param("is", $userId, $sessionDate);
-    $stmt->execute();
+    if (!$stmt->execute()) {
+        echo json_encode(['success' => false, 'error' => 'DB execute failed (get session): ' . $stmt->error]);
+        $stmt->close();
+        $conn->close();
+        exit;
+    }
     $result = $stmt->get_result();
     
     if ($result->num_rows > 0) {

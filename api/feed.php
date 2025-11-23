@@ -19,48 +19,152 @@ if ($method === 'POST') {
     $sessionDate = date('Y-m-d');
     
     $conn = getDBConnection();
-    
+
     // Record the sale with its special features
     $saleStmt = $conn->prepare("INSERT INTO sales (user_id, session_date, revenue, has_credit_card, has_paid_membership, has_warranty) VALUES (?, ?, ?, ?, ?, ?)");
+    if (!$saleStmt) {
+        echo json_encode(['success' => false, 'error' => 'DB prepare failed (insert sale): ' . $conn->error]);
+        $conn->close();
+        exit;
+    }
     $saleStmt->bind_param("isdiii", $userId, $sessionDate, $revenue, $hasCreditCard, $hasPaidMembership, $hasWarranty);
-    $saleStmt->execute();
+    if (!$saleStmt->execute()) {
+        echo json_encode(['success' => false, 'error' => 'DB execute failed (insert sale): ' . $saleStmt->error]);
+        $saleStmt->close();
+        $conn->close();
+        exit;
+    }
     $saleStmt->close();
     
     // Update revenue in today's work session
     $sessionStmt = $conn->prepare("UPDATE work_sessions SET revenue = revenue + ? WHERE user_id = ? AND session_date = ?");
+    if (!$sessionStmt) {
+        echo json_encode(['success' => false, 'error' => 'DB prepare failed (update session revenue): ' . $conn->error]);
+        $conn->close();
+        exit;
+    }
     $sessionStmt->bind_param("dis", $revenue, $userId, $sessionDate);
-    $sessionStmt->execute();
+    if (!$sessionStmt->execute()) {
+        echo json_encode(['success' => false, 'error' => 'DB execute failed (update session revenue): ' . $sessionStmt->error]);
+        $sessionStmt->close();
+        $conn->close();
+        exit;
+    }
+    $sessionStmt->close();
     
-    // Check if goal is met
-    $checkStmt = $conn->prepare("SELECT revenue, goal_amount FROM work_sessions WHERE user_id = ? AND session_date = ?");
+    // Update credit card and paid membership counts
+    if ($hasCreditCard) {
+        $ccStmt = $conn->prepare("UPDATE work_sessions SET current_credit_cards = current_credit_cards + 1 WHERE user_id = ? AND session_date = ?");
+        if (!$ccStmt) {
+            echo json_encode(['success' => false, 'error' => 'DB prepare failed (update credit cards): ' . $conn->error]);
+            $conn->close();
+            exit;
+        }
+        $ccStmt->bind_param("is", $userId, $sessionDate);
+        if (!$ccStmt->execute()) {
+            echo json_encode(['success' => false, 'error' => 'DB execute failed (update credit cards): ' . $ccStmt->error]);
+            $ccStmt->close();
+            $conn->close();
+            exit;
+        }
+        $ccStmt->close();
+    }
+    
+    if ($hasPaidMembership) {
+        $pmStmt = $conn->prepare("UPDATE work_sessions SET current_paid_memberships = current_paid_memberships + 1 WHERE user_id = ? AND session_date = ?");
+        if (!$pmStmt) {
+            echo json_encode(['success' => false, 'error' => 'DB prepare failed (update paid memberships): ' . $conn->error]);
+            $conn->close();
+            exit;
+        }
+        $pmStmt->bind_param("is", $userId, $sessionDate);
+        if (!$pmStmt->execute()) {
+            echo json_encode(['success' => false, 'error' => 'DB execute failed (update paid memberships): ' . $pmStmt->error]);
+            $pmStmt->close();
+            $conn->close();
+            exit;
+        }
+        $pmStmt->close();
+    }
+    
+    // Check if goal is met (primary: memberships and credit cards, secondary: revenue)
+    $checkStmt = $conn->prepare("SELECT revenue, goal_amount, current_paid_memberships, goal_paid_memberships, current_credit_cards, goal_credit_cards FROM work_sessions WHERE user_id = ? AND session_date = ?");
+    if (!$checkStmt) {
+        echo json_encode(['success' => false, 'error' => 'DB prepare failed (check session after sale): ' . $conn->error]);
+        $conn->close();
+        exit;
+    }
     $checkStmt->bind_param("is", $userId, $sessionDate);
-    $checkStmt->execute();
+    if (!$checkStmt->execute()) {
+        echo json_encode(['success' => false, 'error' => 'DB execute failed (check session after sale): ' . $checkStmt->error]);
+        $checkStmt->close();
+        $conn->close();
+        exit;
+    }
     $result = $checkStmt->get_result();
     
     $goalMet = false;
     if ($result->num_rows > 0) {
         $session = $result->fetch_assoc();
-        $goalMet = $session['revenue'] >= $session['goal_amount'];
+        // Goal is met if they have both required memberships and credit cards
+        $goalMet = ($session['current_paid_memberships'] >= $session['goal_paid_memberships']) && 
+                   ($session['current_credit_cards'] >= $session['goal_credit_cards']);
         
         // Update goal_met status
         $updateGoalStmt = $conn->prepare("UPDATE work_sessions SET goal_met = ? WHERE user_id = ? AND session_date = ?");
+        if (!$updateGoalStmt) {
+            echo json_encode(['success' => false, 'error' => 'DB prepare failed (update goal): ' . $conn->error]);
+            $checkStmt->close();
+            $conn->close();
+            exit;
+        }
         $updateGoalStmt->bind_param("iis", $goalMet, $userId, $sessionDate);
-        $updateGoalStmt->execute();
+        if (!$updateGoalStmt->execute()) {
+            echo json_encode(['success' => false, 'error' => 'DB execute failed (update goal): ' . $updateGoalStmt->error]);
+            $updateGoalStmt->close();
+            $checkStmt->close();
+            $conn->close();
+            exit;
+        }
         $updateGoalStmt->close();
     }
     
-    // Calculate health increase based on revenue (e.g., $50 = 10 health, max 20 base)
-    $healthIncrease = min(20, floor($revenue / 50) * 10);
-    $happinessIncrease = $healthIncrease;
+    // Calculate health increase based on meeting goals
+    $healthIncrease = 5; // Base for any sale
+    $happinessIncrease = 5;
+    
+    // Small bonus for revenue (not weighted heavily)
+    if ($revenue >= 100) {
+        $healthIncrease += 5;
+        $happinessIncrease += 5;
+    }
     
     // Apply special bonuses
     $bonusMessage = '';
     
-    // Bonus for Credit Card + Paid Membership combo
+    // Big bonus for Paid Membership (primary goal)
+    if ($hasPaidMembership) {
+        $healthIncrease += 20;
+        $happinessIncrease += 25;
+        $bonusMessage = '⭐ EXCELLENT! Paid Membership! +20 Health, +25 Happiness!';
+    }
+    
+    // Big bonus for Credit Card (primary goal)
+    if ($hasCreditCard) {
+        $healthIncrease += 20;
+        $happinessIncrease += 25;
+        if ($bonusMessage) {
+            $bonusMessage .= ' 💳 Plus Credit Card! +20 Health, +25 Happiness!';
+        } else {
+            $bonusMessage = '💳 EXCELLENT! Credit Card! +20 Health, +25 Happiness!';
+        }
+    }
+    
+    // Extra bonus for the combo
     if ($hasCreditCard && $hasPaidMembership) {
-        $healthIncrease += 15;
-        $happinessIncrease += 20;
-        $bonusMessage = '🎉 AMAZING! Credit Card + Paid Membership combo! +15 Health, +20 Happiness!';
+        $healthIncrease += 10;
+        $happinessIncrease += 10;
+        $bonusMessage = '🎉 AMAZING COMBO! Credit Card + Paid Membership! Total: +50 Health, +60 Happiness!';
     }
     
     // Bonus for Warranty
@@ -68,7 +172,7 @@ if ($method === 'POST') {
         $healthIncrease += 10;
         $happinessIncrease += 10;
         if ($bonusMessage) {
-            $bonusMessage .= ' 🛡️ Plus Warranty bonus! +10 Health, +10 Happiness!';
+            $bonusMessage .= ' 🛡️ Plus Warranty! +10 Health, +10 Happiness!';
         } else {
             $bonusMessage = '🛡️ Great job with the Warranty! +10 Health, +10 Happiness!';
         }
@@ -81,34 +185,59 @@ if ($method === 'POST') {
                                        last_fed = NOW(),
                                        total_revenue = total_revenue + ?
                                    WHERE user_id = ?");
+    if (!$animalStmt) {
+        echo json_encode(['success' => false, 'error' => 'DB prepare failed (update animal stats): ' . $conn->error]);
+        $checkStmt->close();
+        $conn->close();
+        exit;
+    }
     $animalStmt->bind_param("iidi", $healthIncrease, $happinessIncrease, $revenue, $userId);
     
-    if ($animalStmt->execute()) {
-        // Get updated stats
-        $statsStmt = $conn->prepare("SELECT health, happiness, total_revenue FROM animal_stats WHERE user_id = ?");
-        $statsStmt->bind_param("i", $userId);
-        $statsStmt->execute();
-        $statsResult = $statsStmt->get_result();
-        $stats = $statsResult->fetch_assoc();
-        
-        $message = 'Animal fed successfully!';
-        if ($bonusMessage) {
-            $message .= ' ' . $bonusMessage;
-        }
-        
-        echo json_encode([
-            'success' => true,
-            'health' => $stats['health'],
-            'happiness' => $stats['happiness'],
-            'total_revenue' => $stats['total_revenue'],
-            'goal_met' => $goalMet,
-            'message' => $message
-        ]);
-        
-        $statsStmt->close();
-    } else {
-        echo json_encode(['success' => false, 'error' => 'Failed to feed animal']);
+    if (!$animalStmt->execute()) {
+        echo json_encode(['success' => false, 'error' => 'DB execute failed (update animal stats): ' . $animalStmt->error]);
+        $animalStmt->close();
+        $checkStmt->close();
+        $conn->close();
+        exit;
     }
+
+    // Get updated stats
+    $statsStmt = $conn->prepare("SELECT health, happiness, total_revenue FROM animal_stats WHERE user_id = ?");
+    if (!$statsStmt) {
+        echo json_encode(['success' => false, 'error' => 'DB prepare failed (select stats): ' . $conn->error]);
+        $animalStmt->close();
+        $checkStmt->close();
+        $conn->close();
+        exit;
+    }
+    $statsStmt->bind_param("i", $userId);
+    if (!$statsStmt->execute()) {
+        echo json_encode(['success' => false, 'error' => 'DB execute failed (select stats): ' . $statsStmt->error]);
+        $statsStmt->close();
+        $animalStmt->close();
+        $checkStmt->close();
+        $conn->close();
+        exit;
+    }
+    $statsResult = $statsStmt->get_result();
+    $stats = $statsResult->fetch_assoc();
+
+    $message = 'Animal fed successfully!';
+    if ($bonusMessage) {
+        $message .= ' ' . $bonusMessage;
+    }
+
+    echo json_encode([
+        'success' => true,
+        'health' => $stats['health'],
+        'happiness' => $stats['happiness'],
+        'total_revenue' => $stats['total_revenue'],
+        'goal_met' => $goalMet,
+        'message' => $message
+    ]);
+
+    $statsStmt->close();
+    $animalStmt->close();
     
     $sessionStmt->close();
     $checkStmt->close();
